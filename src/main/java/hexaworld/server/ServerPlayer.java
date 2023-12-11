@@ -10,7 +10,6 @@ import lombok.Getter;
 
 import java.io.*;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 
 public class ServerPlayer implements TCPReceiver {
   static private final CLog log = new CLog(CLog.ConsoleColors.BLUE);
@@ -75,7 +74,7 @@ public class ServerPlayer implements TCPReceiver {
             }
             if (payForCmd(command,ServerAPI.COMMAND.LOAD_CHUNK)) {
               Point chunkCenter = (Point) objectInputStream.readObject();
-                  
+
             }
           }if (packetType == Packet.PacketType.LOGIN.ordinal()) {
             login();

@@ -80,8 +80,7 @@ public class Client extends Application implements TCPReceiver {
         try {
             tcpSocket =  new Socket(serverIP, tcpPort);
         } catch (IOException e) {
-            log.error("Socket creation of [" + serverIP +":"+tcpPort +"] issue:" + e.getMessage());
-            //TODO error
+            log.terror("Socket creation of [" + serverIP +":"+tcpPort +"] issue:" + e.getMessage());
         }
         ClientAPI.init();
 
