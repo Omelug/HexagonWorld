@@ -74,10 +74,4 @@ public class Server implements Runnable{
   private void startTick() {
   }
 
-  private class Map{
-    void loadChunk() {
-
-    }
-  }
-
 }

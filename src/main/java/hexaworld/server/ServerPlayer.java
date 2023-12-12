@@ -2,6 +2,7 @@ package hexaworld.server;
 
 import hexaworld.CLog;
 import hexaworld.client.Client;
+import hexaworld.geometry.Chunk;
 import hexaworld.geometry.Geometry;
 import hexaworld.geometry.Point;
 import hexaworld.net.Packet;
@@ -10,6 +11,9 @@ import lombok.Getter;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class ServerPlayer implements TCPReceiver {
   static private final CLog log = new CLog(CLog.ConsoleColors.BLUE);
@@ -19,11 +23,14 @@ public class ServerPlayer implements TCPReceiver {
   @Getter
   private Point position = new Point(0,0);
   @Getter
-  private int energy = ServerConfig.getEnergyTable().get(ServerAPI.COMMAND.CHANGE_NAME)+50;//TODO for testing
+  private int energy = ServerConfig.getEnergyTable().get(ServerAPI.COMMAND.CHANGE_NAME)+50;//TODO +50 for testing
+
+  private List<Change> tickChanges;
   @Getter
   private final Socket clientSocket;
   @Getter
   private ObjectOutputStream objectOutputStream;
+  private Set<Chunk> visibleChunks = new HashSet<>();
 
   public ServerPlayer(Socket clientSocket){
     this.clientSocket = clientSocket;
@@ -75,6 +82,12 @@ public class ServerPlayer implements TCPReceiver {
             if (payForCmd(command,ServerAPI.COMMAND.LOAD_CHUNK)) {
               Point chunkCenter = (Point) objectInputStream.readObject();
 
+              Chunk chunk = Map.loadChunk(chunkCenter);
+              visibleChunks.add(chunk);
+
+              objectOutputStream.writeInt(Packet.PacketType.CHUNK.ordinal());
+              objectOutputStream.writeObject(chunk);
+              objectOutputStream.flush();
             }
           }if (packetType == Packet.PacketType.LOGIN.ordinal()) {
             login();
@@ -87,6 +100,20 @@ public class ServerPlayer implements TCPReceiver {
     }
   }
 
+  private void tick(){
+    try {
+      objectOutputStream.writeInt(Packet.PacketType.TICK.ordinal());
+      objectOutputStream.writeInt(energy);
+      objectOutputStream.writeInt(tickChanges.size());
+      for(Change tickChange : tickChanges) {
+        objectOutputStream.writeObject(tickChange);
+      }
+      objectOutputStream.flush();
+    } catch (IOException e) {
+      log.error("TICK error");
+    }
+  }
+
   private void login() {
     try {
       objectOutputStream.writeInt(Packet.PacketType.LOGIN.ordinal());
@@ -94,8 +121,12 @@ public class ServerPlayer implements TCPReceiver {
       objectOutputStream.writeInt(energy);
       objectOutputStream.flush();
     } catch (IOException e) {
-      Client.log.error("Error LOGIN connection");
-      e.printStackTrace();
+      Client.log.error("Error LOGIN connection " + e.getMessage());
+    }
+  }
+  private class Change{
+    public Change(){
+
     }
   }
 }
