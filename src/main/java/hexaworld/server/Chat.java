@@ -18,7 +18,7 @@ public class Chat {
       player.getObjectOutputStream().writeObject(msg);
       player.getObjectOutputStream().flush();
     } catch (IOException e) {
-      Client.log.error("Error Chat connection" + msg);
+      Client.log.error("Error Chat connection msg: \" " + msg+"\"");
     }
   }
 }

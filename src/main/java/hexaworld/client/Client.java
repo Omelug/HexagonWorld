@@ -154,7 +154,7 @@ public class Client extends Application implements TCPReceiver {
         String script = "ClientAPI.changeName(name)";
         try {
             engine.put("ClientAPI", clientAPI);
-            engine.put("name", "NesnupejteDrozdi");
+            engine.put("name", "nameM");
 
             engine.eval(script);
         } catch (ScriptException e) {

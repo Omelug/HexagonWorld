@@ -82,12 +82,29 @@ public class Server implements Runnable{
         String command = scanner.nextLine().trim();
         if (command.equalsIgnoreCase("pl") || command.equalsIgnoreCase("playerList")) {
           printPlayerList();
+        }else if (command.startsWith("kick ")){
+          ServerPlayer player = getPlayerByName(command.substring(5));
+          if (player == null){
+            log.error(command.substring(5) + "t is not here");
+            continue;
+          }
+          player.kick();
+          Chat.msgAll(command.substring(5) + " kicked out");
         }else{
           log.error("Invalid command " + command);
         }
       }
     });
     startCLIThread.start();
+  }
+  //only first player of this name
+  private ServerPlayer getPlayerByName(String name) {
+    for (ServerPlayer player : players){
+      if (name.equals(player.getName())){
+        return player;
+      }
+    }
+    return null;
   }
 
   private void printPlayerList() {

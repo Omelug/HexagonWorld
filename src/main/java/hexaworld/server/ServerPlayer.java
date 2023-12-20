@@ -3,7 +3,6 @@ package hexaworld.server;
 import hexaworld.CLog;
 import hexaworld.client.Client;
 import hexaworld.geometry.Chunk;
-import hexaworld.geometry.Geometry;
 import hexaworld.geometry.Point;
 import hexaworld.net.Packet;
 import hexaworld.net.TCPReceiver;
@@ -97,7 +96,7 @@ public class ServerPlayer implements TCPReceiver {
       } catch(EOFException e) {
         continue;
       }catch (IOException | ClassNotFoundException e) {
-        throw new RuntimeException(e);
+        kick();
       }
     }
   }
@@ -126,6 +125,17 @@ public class ServerPlayer implements TCPReceiver {
       Client.log.error("Error LOGIN connection " + e.getMessage());
     }
   }
+
+  public void kick() {
+    Chat.msg(this,"You are kicking out");
+    try {
+      clientSocket.close();
+    } catch (IOException e) {
+     log.error("Client socket close exception" + e.getMessage());
+    }
+    Server.getPlayers().remove(this);
+  }
+
   private class Change{
     public Change(){
 
