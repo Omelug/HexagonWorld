@@ -1,5 +1,7 @@
 package hexaworld;
 
+import javafx.scene.paint.Color;
+
 public class CLog {
 
   private String color = ConsoleColors.BLACK;

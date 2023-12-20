@@ -3,6 +3,7 @@ package hexaworld.client;
 import hexaworld.geometry.Geometry;
 import hexaworld.geometry.Point;
 import javafx.scene.input.KeyCode;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Path;
@@ -17,16 +18,16 @@ public class Player{
   private static Point position = new Point(0,0);
   private final Color hexagonColor = Color.CYAN;//TODO const
   private Path hexagonPath;
-  private double size = 32;
+  private double size = 1;
   @Getter
   private String name = "Player42";
   @Getter @Setter
   private int energy = 0;
 
-  public Player(StackPane root, String name) {
+  public Player(Pane root, String name) {
     hexagonPath = Geometry.createHexagonPath(position.getX(), position.getY(), size);
     hexagonPath.setFill(hexagonColor);
-    //root.getChildren().add(hexagonPath);
+    root.getChildren().add(hexagonPath);
     this.name = name;
   }
 
@@ -38,6 +39,7 @@ public class Player{
   }
 
   public void handleKeyPress(KeyCode code) {
+    //Client.log.debug("Pressed " + code);
     switch (code) {
       case W:
         move(0, -size);

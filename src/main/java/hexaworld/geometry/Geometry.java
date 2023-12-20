@@ -1,30 +1,40 @@
 package hexaworld.geometry;
 
-import javafx.scene.shape.ClosePath;
-import javafx.scene.shape.LineTo;
-import javafx.scene.shape.MoveTo;
-import javafx.scene.shape.Path;
+import hexaworld.CLog;
+import hexaworld.client.Client;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.*;
 
 
 public class Geometry {
   //hexagon
   public static final int HEXAGON_BORDERS = 6;
+  private static CLog log = new CLog(CLog.ConsoleColors.CYAN_BRIGHT);
 
   public static Path createHexagonPath(double centerX, double centerY, double size) {
     Path hexagonPath = new Path();
+    Point sizePoint = multiplePoint(Client.getVIEW_UNIT(),size); //TODO
+    System.out.println("sizePoint " + sizePoint);
 
-    double h = getTriangleV(size);//height of triangle
-    hexagonPath.getElements().add(new MoveTo(centerX, centerY-size)); //up
-    hexagonPath.getElements().add(new LineTo(centerX+h, centerY-size/2));
-    hexagonPath.getElements().add(new LineTo(centerX+h, centerY+size/2));
-    hexagonPath.getElements().add(new LineTo(centerX, centerY+size));
-    hexagonPath.getElements().add(new LineTo(centerX-h, centerY+size/2));
-    hexagonPath.getElements().add(new LineTo(centerX-h, centerY-size/2));
+    centerX *= Client.getVIEW_UNIT().getX();
+    centerY *= Client.getVIEW_UNIT().getY();
+
+    hexagonPath.getElements().add(new MoveTo(centerX, centerY-2*sizePoint.getY())); log.debug(" " + centerX + ";" + centerY); log.debug(" " + centerX*sizePoint.getX() + ";" + (centerY-2)*sizePoint.getY());
+
+    hexagonPath.getElements().add(new LineTo(centerX+sizePoint.getX(), centerY-sizePoint.getY()));
+    hexagonPath.getElements().add(new LineTo(centerX+sizePoint.getX(), centerY+sizePoint.getY()));
+    hexagonPath.getElements().add(new LineTo(centerX, centerY+2*sizePoint.getY()));
+    hexagonPath.getElements().add(new LineTo(centerX-sizePoint.getX(), centerY+sizePoint.getY()));
+    hexagonPath.getElements().add(new LineTo(centerX-sizePoint.getX(), centerY-sizePoint.getY()));
 
 
     hexagonPath.getElements().add(new ClosePath());
 
     return hexagonPath;
+  }
+
+  private static Point multiplePoint(Point point, double c) {
+    return new Point(point.getX()*c, point.getY()*c);
   }
 
   public static int getTriangleV(double size) {

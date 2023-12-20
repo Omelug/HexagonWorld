@@ -39,13 +39,15 @@ public class ServerPlayer implements TCPReceiver {
   }
   boolean payForCmd(int command, ServerAPI.COMMAND testedCmd){ //TOD only command without waiting
     int need = ServerConfig.getEnergyTable().get(testedCmd);
-    if (command == testedCmd.ordinal() && need <= energy){
-      energy -= need;
-      return true;
-    }else{
-      Chat.msg(this,  CLog.ConsoleColors.RED+ "Not enough energy need " + need+". You have " + energy +"."+ CLog.ConsoleColors.RESET);
-      return false;
+    if (command == testedCmd.ordinal()){
+      if (need <= energy){
+        energy -= need;
+        return true;
+      }else{
+        Chat.msg(this,  CLog.ConsoleColors.RED+ "Not enough energy need " + need+". You have " + energy +"."+ CLog.ConsoleColors.RESET);
+      }
     }
+    return false;
   }
   @Override
   public void receiveTCP(Socket tcpClientSocket) {

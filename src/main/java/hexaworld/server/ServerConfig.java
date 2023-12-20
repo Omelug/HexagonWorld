@@ -19,7 +19,7 @@ public class ServerConfig {
   public static final double MAP_SEED = 42;
 
   public static void loadEnergyTable(){ //FIXME load from json
-    energyTable.put(ServerAPI.COMMAND.LOAD_MAP,3);
+    energyTable.put(ServerAPI.COMMAND.LOAD_CHUNK,3);
     energyTable.put(ServerAPI.COMMAND.MOVE,1);
     energyTable.put(ServerAPI.COMMAND.CHANGE_NAME,1);
   }

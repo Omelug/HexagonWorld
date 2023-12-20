@@ -11,7 +11,7 @@ public class Map{
   Set<Chunk> loadedChunks = new HashSet<>();
   static Chunk loadChunk(Point point) {
       Chunk chunk = Chunk.generateChunk(point);
-      //chunk.loadChanges(); //TODO laod changes what cant be generated again
+      //chunk.loadChanges(); //TODO load changes
       return chunk;
   }
 }

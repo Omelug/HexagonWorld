@@ -1,14 +1,16 @@
 package hexaworld.server;
 
 import hexaworld.CLog;
+import hexaworld.client.Client;
 import hexaworld.net.Packet;
 import lombok.Getter;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptException;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.StringJoiner;
+import java.util.*;
 
 public class Server implements Runnable{
   static private final CLog log = new CLog(CLog.ConsoleColors.PURPLE);
@@ -67,8 +69,32 @@ public class Server implements Runnable{
 
   @Override
   public void run() {
+    startCLI();
     startTick();
     startTCP();
+  }
+
+  private void startCLI() {
+
+    Thread startCLIThread = new Thread(() -> {
+      Scanner scanner = new Scanner(System.in);
+      while (true) {
+        String command = scanner.nextLine().trim();
+        if (command.equalsIgnoreCase("pl") || command.equalsIgnoreCase("playerList")) {
+          printPlayerList();
+        }else{
+          log.error("Invalid command " + command);
+        }
+      }
+    });
+    startCLIThread.start();
+  }
+
+  private void printPlayerList() {
+    log.info("Player list:");
+    for (ServerPlayer player : players){
+      log.info(player.getName() + "(" +player.getEnergy()+ ") pos:" + player.getPosition());
+    }
   }
 
   private void startTick() {

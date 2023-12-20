@@ -6,12 +6,13 @@ import hexaworld.geometry.Geometry;
 import hexaworld.geometry.Point;
 import hexaworld.net.Packet;
 import hexaworld.net.TCPReceiver;
-import hexaworld.server.Chat;
-import hexaworld.server.ServerAPI;
-import hexaworld.server.ServerPlayer;
 import javafx.application.Application;
 import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Path;
 import javafx.stage.Stage;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,53 +22,75 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 
 import javax.script.ScriptEngine;
-import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-import java.util.Set;
 
 public class Client extends Application implements TCPReceiver {
     public static final CLog log = new CLog(CLog.ConsoleColors.GREEN);
 
     @Getter
     private static Socket tcpSocket;
-
-    private StackPane root;
+    @Getter
+    private static final Pane root = new Pane();
 
     @Getter @Setter
     private static Player player;
 
     @Getter @Setter
-    private List<Chunk> chunks;
+    private static Grid grid;
+
+    @Getter @Setter
+    private static double ZOOM = 15;
+    @Getter
+    private static final Point VIEW_UNIT = new Point(Math.sqrt(3)/2*ZOOM,0.5*ZOOM); //new Point((Math.sqrt(3)/4)*ZOOM,0.5*ZOOM);
+
+    @Getter @Setter
+    private static List<Chunk> chunks = new ArrayList<>();
 
     private static ScriptEngine engine;
 
     private static final ClientAPI clientAPI  = new ClientAPI();
-
+    //@Getter
+    // static final Canvas canvas = new Canvas(320, 400);
     @Override
     public void start(Stage primaryStage) {
+        System.out.println("test " + Math.sqrt(3)/2*ZOOM );
+        //root.setStyle("-fx-background-color: #777474;");
+        //Grid grid = new Grid(Grid.GridType.TRIANGLE,canvas);
+        //root.getChildren().add(canvas);
 
-        root = new StackPane();
-        root.setStyle("-fx-background-color: #777474;");
-
-        Scene scene = new Scene(root, 300, 300);
-        scene.setOnScroll(scrollEvent -> {
+        Scene scene = new Scene(root, 500, 500);
+        /*scene.setOnScroll(scrollEvent -> {
+            //Client.log.debug("scrollEvent");
             double zoomFactor = Math.exp(scrollEvent.getDeltaY() / 100.0);
             player.zoom(zoomFactor);
             scrollEvent.consume();
-        });
+        });*/
         scene.setOnKeyPressed(keyEvent -> player.handleKeyPress(keyEvent.getCode()));
-
         primaryStage.setTitle("Hexagon World");
         primaryStage.setScene(scene);
 
+        /*Path path1 = Geometry.createHexagonPath(7, 7, 2);
+        path1.setFill(Color.GREEN);
+        Client.getRoot().getChildren().add(path1);
+
+        Path path2 = Geometry.createHexagonPath(3, 7 ,2);
+        path2.setFill(Color.RED);
+        Client.getRoot().getChildren().add(path2);
+
+        Path path3 = Geometry.createHexagonPath(3, 7 ,1);
+        path3.setFill(Color.CYAN);
+        Client.getRoot().getChildren().add(path3);*/
+
         primaryStage.show();
+
     }
 
     private void login(InetAddress serverIP,int tcpPort, String username){
@@ -91,7 +114,6 @@ public class Client extends Application implements TCPReceiver {
         ClientAPI.login();
         ClientAPI.loadAround();
     }
-
     public static void main(String[] args) {
 
         Options options = new Options();
@@ -125,17 +147,18 @@ public class Client extends Application implements TCPReceiver {
             log.error("Argument parsing error "+ e.getMessage());
         }
     }
+    private void tick(){
 
+    }
     private static void startCLI() {
+        String script = "ClientAPI.changeName(name)";
         try {
             engine.put("ClientAPI", clientAPI);
             engine.put("name", "NesnupejteDrozdi");
-            String script = "ClientAPI.changeName(name)";
 
             engine.eval(script);
         } catch (ScriptException e) {
-            log.error("Script exeption");
-            throw new RuntimeException(e);
+            log.error("Script "+script +" exeption");
         }
 
         Thread startCLIThread = new Thread(() -> {
@@ -151,7 +174,7 @@ public class Client extends Application implements TCPReceiver {
                     try {
                         engine.eval(apiCmd);
                     } catch (ScriptException e) {
-                        log.error("Error executing " +  apiCmd);
+                        log.error("Error executing " +  apiCmd + e.getMessage());
                     }
                 }else{
                     log.error("Invalid command " + command);
@@ -180,7 +203,7 @@ public class Client extends Application implements TCPReceiver {
                 if (packetType == Packet.PacketType.CHAT.ordinal()){
                     ClientChat.clientChat( (String) objectInputStream.readObject());
                 }if (packetType == Packet.PacketType.LOGIN.ordinal()){
-                    player.setPosition( (Point) objectInputStream.readObject());
+                    Player.setPosition((Point) objectInputStream.readObject());
                     player.setEnergy(objectInputStream.readInt());
                 }if (packetType == Packet.PacketType.CHUNK.ordinal()){
                     Chunk newChunk = (Chunk) objectInputStream.readObject();
@@ -189,14 +212,13 @@ public class Client extends Application implements TCPReceiver {
                     for (int i = 0; i < chunks.size(); i++) {
                         Chunk existingChunk = chunks.get(i);
                         if (Point.same(existingChunk.getPosition(), newChunk.getPosition())) {
-                            chunks.set(i, newChunk);
                             chunkExists = true;
-                            break;
+                            chunks.set(i, newChunk);
                         }
                     }
-
-                    if (!chunkExists) { // If the Chunk doesn't exist in the list, add it
+                    if (!chunkExists) {
                         chunks.add(newChunk);
+                        ClientAPI.canvasUpdate();
                     }
                 }
             } catch(EOFException e) {
@@ -206,6 +228,7 @@ public class Client extends Application implements TCPReceiver {
             }
         }
     }
+
     private class ClientChat{
         public static void clientChat(String msg){
             System.out.print("chat: " +msg+ "\n");

@@ -5,6 +5,18 @@ import lombok.Getter;
 import java.io.Serializable;
 @Getter
 public class Point implements Serializable {
+  public static Point minus(Point A, Point B) {
+    return new Point(A.x - B.x, A.y - B.y);
+  }
+  public static Point plus(Point A, Point B) {
+    return new Point(A.x + B.x, A.y + B.y);
+  }
+
+  public void setTo(double x, double y) {
+    this.x = x;
+    this.y = y;
+  }
+
   public enum HEXA_MOVE{UP,RIGHT_UP, RIGHT_DOWN,DOWN,LEFT_DOWN,LEFT_UP}
   private double x,y;
 
@@ -13,7 +25,7 @@ public class Point implements Serializable {
     this.y=y;
   }
 
-  public Point addPoint(int x, int y) {
+  public Point addPoint(double x, double y) {
     return new Point(this.x + x, this.y + y);
   }
   public Point addPoint(HEXA_MOVE move) {
@@ -21,7 +33,7 @@ public class Point implements Serializable {
     p.add(move);
     return p;
   }
-  public Point getNextChunk(int border) {
+  public Point moveToNearChunk(int border) {
     Point p = new Point(0,0);
     switch (border){
       case 1 -> p.add(2,6);

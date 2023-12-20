@@ -1,10 +1,13 @@
 package hexaworld.client;
 
 import hexaworld.CLog;
+import hexaworld.geometry.Chunk;
 import hexaworld.geometry.Geometry;
 import hexaworld.geometry.Point;
 import hexaworld.net.Packet;
 import hexaworld.server.ServerAPI;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Path;
 
 import java.io.*;
 import java.util.List;
@@ -46,9 +49,10 @@ public class ClientAPI {
 
   public static void loadAround() {
     Point center = getChunkCenter(Player.getPosition());
-    //first circle
-    for (int i = 0; i < Geometry.HEXAGON_BORDERS;i++)
-      loadChunk(center.getNextChunk(i));
+    for (int i = 0; i < Geometry.HEXAGON_BORDERS;i++){
+      loadChunk(center.moveToNearChunk(i));
+      //System.out.println("center.moveToNearChunk(i)" + center.moveToNearChunk(i));
+    }
   }
 
   private static Point getChunkCenter(Point position) {
@@ -74,5 +78,16 @@ public class ClientAPI {
     } catch (IOException e) {
       Client.log.error("Error TCP connection " + e.getMessage());
     }
+  }
+
+  public static void canvasUpdate() {
+    //TODO this is noly follow player mode
+    //Player.getPosition().setTo(0,0);
+
+    /*
+    for (Chunk chunk : Client.getChunks()) {
+      System.out.println("drawing chunk" +chunk.getPosition());
+      chunk.draw(Point.minus(chunk.getPosition(), Player.getPosition()));
+    }*/
   }
 }
