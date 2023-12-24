@@ -81,9 +81,8 @@ public class ServerPlayer implements TCPReceiver {
               name = newUsername;
             }
             if (payForCmd(command,ServerAPI.COMMAND.LOAD_CHUNK)) {
-              Point chunkCenter = (Point) objectInputStream.readObject();
 
-              Chunk chunk = Map.loadChunk(chunkCenter);
+              Chunk chunk = Map.loadChunk((Point) objectInputStream.readObject());
               visibleChunks.add(chunk);
 
               objectOutputStream.writeInt(Packet.PacketType.CHUNK.ordinal());
@@ -97,6 +96,7 @@ public class ServerPlayer implements TCPReceiver {
         continue;
       }catch (IOException | ClassNotFoundException e) {
         kick();
+        break;
       }
     }
   }

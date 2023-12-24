@@ -10,6 +10,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Path;
 
 import java.io.*;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
@@ -49,8 +50,9 @@ public class ClientAPI {
 
   public static void loadAround() {
     Point center = getChunkCenter(Player.getPosition());
-    for (int i = 0; i < Geometry.HEXAGON_BORDERS;i++){
-      loadChunk(center.moveToNearChunk(i));
+    loadChunk(center);
+    for (Geometry.HEXAGON_BORDERS border: Geometry.HEXAGON_BORDERS.values()){
+      loadChunk(center.moveToNearChunk(border));
       //System.out.println("center.moveToNearChunk(i)" + center.moveToNearChunk(i));
     }
   }
@@ -81,13 +83,20 @@ public class ClientAPI {
   }
 
   public static void canvasUpdate() {
-    //TODO this is noly follow player mode
-    //Player.getPosition().setTo(0,0);
+    Client.getRoot().getChildren().clear();
 
-    /*
-    for (Chunk chunk : Client.getChunks()) {
-      System.out.println("drawing chunk" +chunk.getPosition());
-      chunk.draw(Point.minus(chunk.getPosition(), Player.getPosition()));
-    }*/
+    List<Chunk> chunks = Client.getChunks();
+    Iterator<Chunk> iterator = chunks.iterator();
+
+    while (iterator.hasNext()) {
+      Chunk chunk = iterator.next();
+      chunk.draw();
+    }
+
+    Player.draw();
+    if(Client.getViewType() == Client.ViewType.FOLLOW){
+      Geometry.moveAllChildren(Client.getRoot().getWidth()/2,Client.getRoot().getHeight()/2);
+    }
   }
+
 }

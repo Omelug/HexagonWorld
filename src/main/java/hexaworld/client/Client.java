@@ -20,7 +20,6 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
-
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
@@ -34,7 +33,10 @@ import java.util.Scanner;
 
 public class Client extends Application implements TCPReceiver {
     public static final CLog log = new CLog(CLog.ConsoleColors.GREEN);
+    public enum ViewType{FOLLOW};
 
+    @Getter @Setter
+    private static ViewType viewType;
     @Getter
     private static Socket tcpSocket;
     @Getter
@@ -47,7 +49,7 @@ public class Client extends Application implements TCPReceiver {
     private static Grid grid;
 
     @Getter @Setter
-    private static double ZOOM = 15;
+    private static double ZOOM = 30;
     @Getter
     private static final Point VIEW_UNIT = new Point(Math.sqrt(3)/2*ZOOM,0.5*ZOOM); //new Point((Math.sqrt(3)/4)*ZOOM,0.5*ZOOM);
 
@@ -57,6 +59,10 @@ public class Client extends Application implements TCPReceiver {
     private static ScriptEngine engine;
 
     private static final ClientAPI clientAPI  = new ClientAPI();
+
+    //@Getter @Setter
+    //private static Point shift;
+
     //@Getter
     // static final Canvas canvas = new Canvas(320, 400);
     @Override
@@ -74,8 +80,12 @@ public class Client extends Application implements TCPReceiver {
             scrollEvent.consume();
         });*/
         scene.setOnKeyPressed(keyEvent -> player.handleKeyPress(keyEvent.getCode()));
+        scene.widthProperty().addListener((observable, oldValue, newValue) -> ClientAPI.canvasUpdate());
+        scene.heightProperty().addListener((observable, oldValue, newValue) -> ClientAPI.canvasUpdate());
+
         primaryStage.setTitle("Hexagon World");
         primaryStage.setScene(scene);
+        //shift = new Point(scene.getWidth()/2,scene.getHeight()/2);
 
         /*Path path1 = Geometry.createHexagonPath(7, 7, 2);
         path1.setFill(Color.GREEN);
@@ -89,6 +99,9 @@ public class Client extends Application implements TCPReceiver {
         path3.setFill(Color.CYAN);
         Client.getRoot().getChildren().add(path3);*/
 
+        viewType = ViewType.FOLLOW;
+        ClientAPI.canvasUpdate();
+
         primaryStage.show();
 
     }
@@ -98,7 +111,7 @@ public class Client extends Application implements TCPReceiver {
         ScriptEngineManager manager = new ScriptEngineManager();
         engine = manager.getEngineByName("python");
 
-        player = new Player(root,username);
+        player = new Player(username);
         //init TCP connection
         try {
             tcpSocket =  new Socket(serverIP, tcpPort);
@@ -114,6 +127,7 @@ public class Client extends Application implements TCPReceiver {
         ClientAPI.login();
         ClientAPI.loadAround();
     }
+
     public static void main(String[] args) {
 
         Options options = new Options();
@@ -125,9 +139,7 @@ public class Client extends Application implements TCPReceiver {
 
         try {
             CommandLine cmd = parser.parse(options, args);
-
             InetAddress serverIP = InetAddress.getByName(cmd.getOptionValue("ip"));
-
             int tcpPort = Integer.parseInt(cmd.getOptionValue("TCPport"));
 
             String name = cmd.getOptionValue("name");
@@ -169,6 +181,8 @@ public class Client extends Application implements TCPReceiver {
                     log.info("help or h for help list");
                 }else if (command.startsWith("player")){
                     ClientChat.clientChat("Player: "+Client.getPlayer());
+                }else if (command.startsWith("shift")){
+                    //ClientChat.clientChat("Shift: "+ Client.getShift());
                 }else if (command.startsWith("api ")){
                     String apiCmd = "ClientAPI."+ command.substring(4);
                     try {
@@ -200,6 +214,7 @@ public class Client extends Application implements TCPReceiver {
         while(true){
             try {
                 int packetType = objectInputStream.readInt();
+
                 if (packetType == Packet.PacketType.CHAT.ordinal()){
                     ClientChat.clientChat( (String) objectInputStream.readObject());
                 }if (packetType == Packet.PacketType.LOGIN.ordinal()){
@@ -225,11 +240,12 @@ public class Client extends Application implements TCPReceiver {
                 continue;
             }catch (IOException | ClassNotFoundException e) {
                 log.terror("Connection lost");
+                break;
             }
         }
     }
 
-    private class ClientChat{
+    private static class ClientChat{
         public static void clientChat(String msg){
             System.out.print("chat: " +msg+ "\n");
         }

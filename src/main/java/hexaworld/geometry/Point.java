@@ -17,7 +17,6 @@ public class Point implements Serializable {
     this.y = y;
   }
 
-  public enum HEXA_MOVE{UP,RIGHT_UP, RIGHT_DOWN,DOWN,LEFT_DOWN,LEFT_UP}
   private double x,y;
 
   public Point(double x, double y){
@@ -28,24 +27,23 @@ public class Point implements Serializable {
   public Point addPoint(double x, double y) {
     return new Point(this.x + x, this.y + y);
   }
-  public Point addPoint(HEXA_MOVE move) {
+  public Point addPoint(Geometry.HEXA_MOVE move) {
     Point p = new Point(0,0);
     p.add(move);
     return p;
   }
-  public Point moveToNearChunk(int border) {
-    Point p = new Point(0,0);
+  public Point moveToNearChunk(Geometry.HEXAGON_BORDERS border) {
+    Point p = clonePoint();
     switch (border){
-      case 1 -> p.add(2,6);
-      case 2 -> p.add(4,0);
-      case 3 -> p.add(2,-6);
-      case 4 -> p.add(-2,-6);
-      case 5 -> p.add(-4,0);
-      case 6 -> p.add(-2,6);
+      case R_UP -> p.add(2,6);
+      case R -> p.add(4,0);
+      case R_D -> p.add(2,-6);
+      case L_D -> p.add(-2,-6);
+      case L -> p.add(-4,0);
+      case L_U -> p.add(-2,6);
     }
     return p;
   }
-
 
   public void add(double deltaX, double deltaY) {
     x+=deltaX; y+=deltaY;
@@ -60,15 +58,9 @@ public class Point implements Serializable {
     }
     return p1.getX() == p2.getX() && p1.getY() == p2.getY();
   }
-  public void add(HEXA_MOVE move){
-    switch (move){
-      case UP -> y+=4;
-      case RIGHT_UP -> {x++;y++;}
-      case RIGHT_DOWN -> {x++;y--;}
-      case DOWN -> y-=4;
-      case LEFT_DOWN -> {x--;y--;}
-      case LEFT_UP -> {x--;y++;}
-    }
+  public void add(Geometry.HEXA_MOVE move){
+    x += move.getX();
+    y += move.getY();
   }
   @Override
   public String toString() {

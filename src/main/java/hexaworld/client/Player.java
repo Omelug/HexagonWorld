@@ -12,66 +12,64 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.util.Map;
+
+import static javafx.scene.input.KeyCode.W;
+
 public class Player{
 
   @Getter @Setter
   private static Point position = new Point(0,0);
-  private final Color hexagonColor = Color.CYAN;//TODO const
-  private Path hexagonPath;
-  private double size = 1;
+  private static final Color hexagonColor = Color.CYAN;//TODO const
+  @Getter
+  private static Path hexagonPath;
+  private static double size = 1;
   @Getter
   private String name = "Player42";
   @Getter @Setter
   private int energy = 0;
+  private static final double MIN_SCALE = 0.1;
 
-  public Player(Pane root, String name) {
+  public Player( String name) {
+    this.name = name;
+  }
+  public static void draw(){
     hexagonPath = Geometry.createHexagonPath(position.getX(), position.getY(), size);
     hexagonPath.setFill(hexagonColor);
-    root.getChildren().add(hexagonPath);
-    this.name = name;
+    Client.getRoot().getChildren().add(hexagonPath);
   }
 
   void move(double deltaX, double deltaY) {
     position.add(deltaX,deltaY);
-
-    hexagonPath.setTranslateX(position.getX());
-    hexagonPath.setTranslateY(position.getY());
   }
 
   public void handleKeyPress(KeyCode code) {
     //Client.log.debug("Pressed " + code);
-    switch (code) {
-      case W:
-        move(0, -size);
-        break;
-      case S:
-        move(0, size);
-        break;
-      case A:
-        move(-Geometry.getTriangleV(size), 0);
-        move(0, size/2);
-        break;
-      case Q:
-        move(-Geometry.getTriangleV(size), 0);
-        move(0, -size/2);
-        break;
-      case D:
-        move(Geometry.getTriangleV(size), 0);
-        move(0, size/2);
-        break;
-      case E:
-        move(Geometry.getTriangleV(size), 0);
-        move(0, -size/2);
-        break;
+    //TODO sent to server and check correction if is not possible
+
+    Map<KeyCode, Geometry.HEXA_MOVE> keyBindMove = Map.of(
+            KeyCode.W, Geometry.HEXA_MOVE.UP,
+            KeyCode.S, Geometry.HEXA_MOVE.DOWN,
+            KeyCode.A, Geometry.HEXA_MOVE.LEFT_DOWN,
+            KeyCode.Q, Geometry.HEXA_MOVE.LEFT_UP,
+            KeyCode.D, Geometry.HEXA_MOVE.RIGHT_DOWN,
+            KeyCode.E, Geometry.HEXA_MOVE.RIGHT_UP
+    );
+
+    if(null != keyBindMove.get(code)){
+      position.add(keyBindMove.get(code));
+      Geometry.moveNoPlayerR(keyBindMove.get(code)); //TODO čelem vzad, pozadi se pohybuje opacne a jsou to nějak male kroky
     }
+
   }
-  private static final double MIN_SCALE = 0.1;
+
   public void zoom(double zoomFactor) {
     double currentScale = Math.max(zoomFactor * hexagonPath.getScaleX(), MIN_SCALE);
     hexagonPath.setScaleX(currentScale);
     hexagonPath.setScaleY(currentScale);
     size *= zoomFactor;
   }
+
   @Override
   public String toString() {
     return String.format("%s[%f,%f], energy: %d", name, position.getX(), position.getY(), energy);
