@@ -4,17 +4,37 @@ import hexaworld.CLog;
 import hexaworld.client.Client;
 import hexaworld.client.Player;
 import javafx.scene.Node;
-import javafx.scene.input.KeyCode;
-import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.shape.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import java.util.Map;
-
 
 public class Geometry {
+
+  public static void drawHexagon(GraphicsContext gc, double centerX, double centerY, double size) {
+
+    double[] xPoints = new double[HEXA_MOVE.values().length];
+    double[] yPoints = new double[HEXA_MOVE.values().length];
+
+    for (int i = 0; i < HEXA_MOVE.values().length; i++) {
+      xPoints[i] = centerX + HEXA_MOVE.values()[i].getX()*size;
+      yPoints[i] = centerY + HEXA_MOVE.values()[i].getY()*size;
+    }
+
+
+    Geometry.multiplyArray(xPoints, Client.getVIEW_UNIT().getX());
+    Geometry.multiplyArray(yPoints, Client.getVIEW_UNIT().getY());
+
+    Geometry.addArray(xPoints, Client.getRoot().getWidth()/2);
+    Geometry.addArray(yPoints, Client.getRoot().getHeight()/2);
+
+    Geometry.addArray(xPoints, Client.getShift().getX());
+    Geometry.addArray(yPoints, Client.getShift().getY());
+
+    gc.fillPolygon(xPoints, yPoints, HEXA_MOVE.values().length);
+    gc.strokePolygon(xPoints, yPoints, HEXA_MOVE.values().length);
+  }
 
   //hexagon
   //public static final int HEXAGON_BORDERS = 6;
@@ -30,7 +50,6 @@ public class Geometry {
   public static Path createHexagonPath(double centerX, double centerY, double size) {
     Path hexagonPath = new Path();
     Point sizePoint = multiplePoint(Client.getVIEW_UNIT(),size); //TODO
-    //System.out.println("sizePoint " + sizePoint);
 
     centerX *= Client.getVIEW_UNIT().getX();
     centerY *= Client.getVIEW_UNIT().getY();
@@ -43,7 +62,6 @@ public class Geometry {
     hexagonPath.getElements().add(new LineTo(centerX-sizePoint.getX(), centerY+sizePoint.getY()));
     hexagonPath.getElements().add(new LineTo(centerX-sizePoint.getX(), centerY-sizePoint.getY()));
 
-
     hexagonPath.getElements().add(new ClosePath());
 
     return hexagonPath;
@@ -51,10 +69,6 @@ public class Geometry {
 
   private static Point multiplePoint(Point point, double c) {
     return new Point(point.getX()*c, point.getY()*c);
-  }
-
-  public static int getTriangleV(double size) {
-    return (int) Math.sqrt(Math.pow(size,2)-Math.pow(size/2,2)); //TODO double or int>
   }
 
   public static boolean isCenterHF(Point point) {
@@ -96,5 +110,16 @@ public class Geometry {
   public static void moveNoPlayerR(HEXA_MOVE move) {
     moveNoPlayer(-move.getX()*Client.getVIEW_UNIT().getX(), -move.getY()*Client.getVIEW_UNIT().getY());
   }
+  public static void multiplyArray(double[] array, double factor) {
+    for (int i = 0; i < array.length; i++) {
+      array[i] *= factor;
+    }
+  }
+  public static void addArray(double[] array, double value) {
+    for (int i = 0; i < array.length; i++) {
+      array[i] += value;
+    }
+  }
+
 
 }

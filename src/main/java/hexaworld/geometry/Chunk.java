@@ -1,21 +1,25 @@
 package hexaworld.geometry;
 
 import hexaworld.client.Client;
-import hexaworld.client.Player;
 import hexaworld.server.ServerConfig;
+import javafx.application.Platform;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Path;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.io.Serializable;
-import java.util.Random;
+import java.util.*;
+
+import static hexaworld.client.Client.VIEW_UNIT;
 
 public class Chunk implements Serializable {
   @Getter
   private final Point position;
   private BlockType[] data;
-  private Path hexagonPath;
+  private Path hexagonPath = null;
   public final short CHUNK_SIZE = 2;
 
   public Chunk(Point position, BlockType[] data) {
@@ -35,47 +39,48 @@ public class Chunk implements Serializable {
   }
 
   public void draw() {
-
-    //TODO only follow player type
-    //hexagonPath = Geometry.createHexagonPath(Player.getPosition().getX()+ vectorFromPlayer.getX(), Player.getPosition().getY()+ vectorFromPlayer.getY(), 2);
-    //System.out.println("" +Player.getPosition() + vectorFromPlayer +"->" + (Player.getPosition().getX()+ vectorFromPlayer.getX())*Client.getVIEW_UNIT().getX());
-    hexagonPath = Geometry.createHexagonPath(position.getX(), position.getY(), CHUNK_SIZE);
+    /*hexagonPath = Geometry.createHexagonPath(position.getX(), position.getY(), CHUNK_SIZE);
     hexagonPath.setFill(Color.GREEN);
 
-    Client.getRoot().getChildren().add(hexagonPath);
+    if (!Client.getRoot().getChildren().contains(hexagonPath)) {
+      Client.getRoot().getChildren().add(hexagonPath);
+    }*/
+    GraphicsContext gc = Client.getMapCanvas().getGraphicsContext2D();
+    Geometry.drawHexagon(gc,position.getX(), position.getY(), CHUNK_SIZE);
   }
 
-  /*private void drawTrianglesInHexagon(double x, double y, double size) {
+  public static void drawTriangles(GraphicsContext gc) {
 
-    gc = Client.get.getGraphicsContext2D();
+    //System.out.println(" " + Client.getCanvas().getWidth() + " " + Client.getCanvas().getHeight());
 
-    gc.setFill(Color.RED); // Change the color of the triangles as needed
     gc.setStroke(Color.BLACK);
+    gc.setFill(Color.RED);
 
-    double triangleHeight = size * Math.sqrt(3) / 2;
+    List<Chunk> chunks = Client.getChunks();
+    Iterator<Chunk> iterator = chunks.iterator();
+    while (iterator.hasNext()) {
+      Chunk chunk = iterator.next();
 
-    double[] xPoints = new double[3];
-    double[] yPoints = new double[3];
+      double[] xPoints = {chunk.getPosition().getX(), chunk.getPosition().getX() + Geometry.HEXA_MOVE.UP.getX(), chunk.getPosition().getX() + Geometry.HEXA_MOVE.RIGHT_UP.getX()};
+      double[] yPoints = {chunk.getPosition().getY(), chunk.getPosition().getY() + Geometry.HEXA_MOVE.UP.getY(), chunk.getPosition().getY() + Geometry.HEXA_MOVE.RIGHT_UP.getY()};
+      //TODO all triangles
 
-    // Draw triangles within hexagon
-    for (int i = 0; i < 6; i++) {
-      double angle1 = 2.0 * Math.PI * i / 6;
-      double angle2 = 2.0 * Math.PI * (i + 1) / 6;
+      Geometry.multiplyArray(xPoints, Client.getVIEW_UNIT().getX());
+      Geometry.multiplyArray(yPoints, Client.getVIEW_UNIT().getY());
 
-      xPoints[0] = x;
-      yPoints[0] = y;
+      Geometry.addArray(xPoints, Client.getRoot().getWidth()/2);
+      Geometry.addArray(yPoints, Client.getRoot().getHeight()/2);
 
-      xPoints[1] = x + size * Math.cos(angle1);
-      yPoints[1] = y + size * Math.sin(angle1);
+      Geometry.addArray(xPoints, Client.getShift().getX());
+      Geometry.addArray(yPoints, Client.getShift().getY());
 
-      xPoints[2] = x + size * Math.cos(angle2);
-      yPoints[2] = y + size * Math.sin(angle2);
+      //System.out.println("xPoints: " + Arrays.toString(xPoints));
+      //System.out.println("yPoints: " + Arrays.toString(yPoints));
 
-      // Draw each triangle
       gc.fillPolygon(xPoints, yPoints, 3);
       gc.strokePolygon(xPoints, yPoints, 3);
     }
-  }*/
+  }
 
 
   @AllArgsConstructor

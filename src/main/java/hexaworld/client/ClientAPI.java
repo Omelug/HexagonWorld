@@ -6,6 +6,8 @@ import hexaworld.geometry.Geometry;
 import hexaworld.geometry.Point;
 import hexaworld.net.Packet;
 import hexaworld.server.ServerAPI;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Path;
 
@@ -82,8 +84,14 @@ public class ClientAPI {
     }
   }
 
-  public static void canvasUpdate() {
-    Client.getRoot().getChildren().clear();
+  public static void mapCanvasUpdate() {
+    Client.getRoot().getChildren().remove(Client.getMapCanvas());
+
+    Client.setMapCanvas(new Canvas(Client.getRoot().getWidth(),Client.getRoot().getHeight()));
+    GraphicsContext gc = Client.getMapCanvas().getGraphicsContext2D();
+    //gc.clearRect(0, 0, gc.getCanvas().getWidth(), gc.getCanvas().getHeight());
+    gc.setFill(Color.rgb(200, 15, 230, 0.5));
+    gc.fillRect(0, 0, Client.getMapCanvas().getWidth(), Client.getMapCanvas().getHeight());
 
     List<Chunk> chunks = Client.getChunks();
     Iterator<Chunk> iterator = chunks.iterator();
@@ -93,10 +101,27 @@ public class ClientAPI {
       chunk.draw();
     }
 
-    Player.draw();
     if(Client.getViewType() == Client.ViewType.FOLLOW){
-      Geometry.moveAllChildren(Client.getRoot().getWidth()/2,Client.getRoot().getHeight()/2);
+      //Geometry.moveAllChildren(Client.getRoot().getWidth()/2,Client.getRoot().getHeight()/2);
+      Chunk.drawTriangles(gc);
+      //Player.draw(gc);
     }
+
+
+    Client.getRoot().getChildren().add(Client.getMapCanvas());
   }
 
+  public static void playerCanvasUpdate() {
+    Client.getRoot().getChildren().remove(Client.getPlayerCanvas());
+    Client.setPlayerCanvas(new Canvas(Client.getRoot().getWidth(),Client.getRoot().getHeight()));
+    GraphicsContext gc = Client.getPlayerCanvas().getGraphicsContext2D();
+    gc.clearRect(0, 0, gc.getCanvas().getWidth(), gc.getCanvas().getHeight());
+    gc.setFill(Color.TRANSPARENT);
+    Player.draw(gc);
+    Client.getRoot().getChildren().add(Client.getPlayerCanvas());
+  }
+  public static void canvasUpdate() {
+    mapCanvasUpdate();
+    playerCanvasUpdate();
+  }
 }

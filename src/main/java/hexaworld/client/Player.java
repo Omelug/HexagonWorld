@@ -2,6 +2,7 @@ package hexaworld.client;
 
 import hexaworld.geometry.Geometry;
 import hexaworld.geometry.Point;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
@@ -23,7 +24,7 @@ public class Player{
   private static final Color hexagonColor = Color.CYAN;//TODO const
   @Getter
   private static Path hexagonPath;
-  private static double size = 1;
+  private static double size = 0.8;
   @Getter
   private String name = "Player42";
   @Getter @Setter
@@ -33,10 +34,14 @@ public class Player{
   public Player( String name) {
     this.name = name;
   }
-  public static void draw(){
-    hexagonPath = Geometry.createHexagonPath(position.getX(), position.getY(), size);
+  public static void draw(GraphicsContext gc){
+    /*hexagonPath = Geometry.createHexagonPath(position.getX(), position.getY(), size);
     hexagonPath.setFill(hexagonColor);
-    Client.getRoot().getChildren().add(hexagonPath);
+    if (!Client.getRoot().getChildren().contains(hexagonPath)) {
+      Client.getRoot().getChildren().add(hexagonPath);
+    }*/
+    gc.setFill(Color.CYAN);
+    Geometry.drawHexagon(gc,position.getX(), position.getY(), size);
   }
 
   void move(double deltaX, double deltaY) {
@@ -58,7 +63,21 @@ public class Player{
 
     if(null != keyBindMove.get(code)){
       position.add(keyBindMove.get(code));
-      Geometry.moveNoPlayerR(keyBindMove.get(code)); //TODO čelem vzad, pozadi se pohybuje opacne a jsou to nějak male kroky
+      //Geometry.moveNoPlayerR(keyBindMove.get(code)); //TODO čelem vzad, pozadi se pohybuje opacne a jsou to nějak male kroky
+      ClientAPI.playerCanvasUpdate();
+      return;
+    }
+    Map<KeyCode, Point> keyBindShift = Map.of(
+            KeyCode.UP, new Point(0,Client.getZOOM()),
+            KeyCode.DOWN, new Point(0,-Client.getZOOM()),
+            KeyCode.LEFT, new Point(Client.getZOOM(),0),
+            KeyCode.RIGHT, new Point(-Client.getZOOM(),0)
+    );
+
+    Point deltaShift = keyBindShift.get(code);
+    if(null != deltaShift){
+      Client.getShift().add(deltaShift);
+      ClientAPI.canvasUpdate();
     }
 
   }

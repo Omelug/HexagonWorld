@@ -9,4 +9,5 @@ module hexaworld {
   exports hexaworld;
   exports hexaworld.client;
   exports hexaworld.geometry;
+  exports tests.example.hexaworld;
 }

@@ -90,6 +90,8 @@ public class Server implements Runnable{
           }
           player.kick();
           Chat.msgAll(command.substring(5) + " kicked out");
+        }else if( command.startsWith("chat ")){
+          Chat.msgAll("[Server] " + command.substring(5));
         }else{
           log.error("Invalid command " + command);
         }

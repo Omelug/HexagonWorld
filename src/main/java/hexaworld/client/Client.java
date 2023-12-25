@@ -7,23 +7,24 @@ import hexaworld.geometry.Point;
 import hexaworld.net.Packet;
 import hexaworld.net.TCPReceiver;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Path;
 import javafx.stage.Stage;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.Options;
+import org.apache.commons.cli.*;
+
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-import java.io.*;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -33,14 +34,21 @@ import java.util.Scanner;
 
 public class Client extends Application implements TCPReceiver {
     public static final CLog log = new CLog(CLog.ConsoleColors.GREEN);
+
+
     public enum ViewType{FOLLOW};
 
+
+    @Getter @Setter
+    private static Point shift = new Point(0,0);
     @Getter @Setter
     private static ViewType viewType;
     @Getter
     private static Socket tcpSocket;
     @Getter
     private static final Pane root = new Pane();
+    @Getter @Setter
+    private static Canvas mapCanvas, playerCanvas;
 
     @Getter @Setter
     private static Player player;
@@ -48,10 +56,11 @@ public class Client extends Application implements TCPReceiver {
     @Getter @Setter
     private static Grid grid;
 
-    @Getter @Setter
-    private static double ZOOM = 30;
     @Getter
-    private static final Point VIEW_UNIT = new Point(Math.sqrt(3)/2*ZOOM,0.5*ZOOM); //new Point((Math.sqrt(3)/4)*ZOOM,0.5*ZOOM);
+    private static final double ZOOM = 30; //start_zoom
+
+    @Getter
+    public static Point VIEW_UNIT = new Point(Math.sqrt(3)/2*ZOOM,0.5*ZOOM); //new Point((Math.sqrt(3)/4)*ZOOM,0.5*ZOOM);
 
     @Getter @Setter
     private static List<Chunk> chunks = new ArrayList<>();
@@ -63,26 +72,31 @@ public class Client extends Application implements TCPReceiver {
     //@Getter @Setter
     //private static Point shift;
 
-    //@Getter
-    // static final Canvas canvas = new Canvas(320, 400);
     @Override
     public void start(Stage primaryStage) {
-        System.out.println("test " + Math.sqrt(3)/2*ZOOM );
+        Platform.setImplicitExit(false); //DONT TOUCH, solve FX error
+
+        //System.out.println("test " + Math.sqrt(3)/2*ZOOM );
         //root.setStyle("-fx-background-color: #777474;");
         //Grid grid = new Grid(Grid.GridType.TRIANGLE,canvas);
-        //root.getChildren().add(canvas);
 
         Scene scene = new Scene(root, 500, 500);
-        /*scene.setOnScroll(scrollEvent -> {
-            //Client.log.debug("scrollEvent");
+
+        scene.setOnScroll(scrollEvent -> {
             double zoomFactor = Math.exp(scrollEvent.getDeltaY() / 100.0);
-            player.zoom(zoomFactor);
+            VIEW_UNIT = new Point(VIEW_UNIT.getX()*zoomFactor,VIEW_UNIT.getY()*zoomFactor);
+            ClientAPI.canvasUpdate();
             scrollEvent.consume();
-        });*/
+        });
+
+
+
         scene.setOnKeyPressed(keyEvent -> player.handleKeyPress(keyEvent.getCode()));
         scene.widthProperty().addListener((observable, oldValue, newValue) -> ClientAPI.canvasUpdate());
         scene.heightProperty().addListener((observable, oldValue, newValue) -> ClientAPI.canvasUpdate());
 
+        //root.getChildren().add(canvas);
+        
         primaryStage.setTitle("Hexagon World");
         primaryStage.setScene(scene);
         //shift = new Point(scene.getWidth()/2,scene.getHeight()/2);
@@ -100,6 +114,9 @@ public class Client extends Application implements TCPReceiver {
         Client.getRoot().getChildren().add(path3);*/
 
         viewType = ViewType.FOLLOW;
+        //mapCanvas = new Canvas(root.getWidth(),root.getHeight());
+        //root.getChildren().add(mapCanvas);
+
         ClientAPI.canvasUpdate();
 
         primaryStage.show();
@@ -155,7 +172,7 @@ public class Client extends Application implements TCPReceiver {
 
         } catch (UnknownHostException e) {
             log.error("Unknown host");
-        } catch (org.apache.commons.cli.ParseException e) {
+        } catch (ParseException e) {
             log.error("Argument parsing error "+ e.getMessage());
         }
     }
@@ -233,7 +250,9 @@ public class Client extends Application implements TCPReceiver {
                     }
                     if (!chunkExists) {
                         chunks.add(newChunk);
-                        ClientAPI.canvasUpdate();
+                        if(mapCanvas != null){
+                            newChunk.draw();
+                        }
                     }
                 }
             } catch(EOFException e) {
