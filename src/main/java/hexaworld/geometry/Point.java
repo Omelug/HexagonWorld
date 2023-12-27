@@ -1,8 +1,7 @@
 package hexaworld.geometry;
-
 import lombok.Getter;
-
 import java.io.Serializable;
+
 @Getter
 public class Point implements Serializable {
   public static Point minus(Point A, Point B) {
@@ -34,14 +33,8 @@ public class Point implements Serializable {
   }
   public Point moveToNearChunk(Geometry.HEXAGON_BORDERS border) {
     Point p = clonePoint();
-    switch (border){
-      case R_UP -> p.add(2,6);
-      case R -> p.add(4,0);
-      case R_D -> p.add(2,-6);
-      case L_D -> p.add(-2,-6);
-      case L -> p.add(-4,0);
-      case L_U -> p.add(-2,6);
-    }
+    p.x += Chunk.CHUNK_SIZE*border.x;
+    p.y += Chunk.CHUNK_SIZE*border.y;
     return p;
   }
 
@@ -49,8 +42,8 @@ public class Point implements Serializable {
     x+=deltaX; y+=deltaY;
   }
   public void add(Point point) {
-    x+= point.getX();
-    y+= point.getY();
+    x+= point.x;
+    y+= point.y;
   }
   public static boolean same(Point p1, Point p2) {
     if (p1 == null || p2 == null){

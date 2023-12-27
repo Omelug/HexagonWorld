@@ -12,7 +12,7 @@ public class Chat {
       msg(p, msg);
     }
   }
-  public static void msg(ServerPlayer player, String msg){ //TODO control spam message on player
+  public static void msg(ServerPlayer player, String msg){
     try {
       player.getObjectOutputStream().writeInt(Packet.PacketType.CHAT.ordinal());
       player.getObjectOutputStream().writeObject(msg);

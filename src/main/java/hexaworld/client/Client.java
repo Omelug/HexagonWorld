@@ -2,7 +2,6 @@ package hexaworld.client;
 
 import hexaworld.CLog;
 import hexaworld.geometry.Chunk;
-import hexaworld.geometry.Geometry;
 import hexaworld.geometry.Point;
 import hexaworld.net.Packet;
 import hexaworld.net.TCPReceiver;
@@ -10,9 +9,7 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import lombok.Getter;
 import lombok.Setter;
@@ -42,7 +39,7 @@ public class Client extends Application implements TCPReceiver {
     @Getter @Setter
     private static Point shift = new Point(0,0);
     @Getter @Setter
-    private static ViewType viewType;
+    private static ViewType viewType = ViewType.FOLLOW; //TODO constant to config
     @Getter
     private static Socket tcpSocket;
     @Getter
@@ -74,7 +71,7 @@ public class Client extends Application implements TCPReceiver {
 
     @Override
     public void start(Stage primaryStage) {
-        Platform.setImplicitExit(false); //DONT TOUCH, solve FX error
+        Platform.setImplicitExit(false); //DONT TOUCH, solve FX error ??? spíš ne
 
         //System.out.println("test " + Math.sqrt(3)/2*ZOOM );
         //root.setStyle("-fx-background-color: #777474;");
@@ -89,34 +86,12 @@ public class Client extends Application implements TCPReceiver {
             scrollEvent.consume();
         });
 
-
-
         scene.setOnKeyPressed(keyEvent -> player.handleKeyPress(keyEvent.getCode()));
         scene.widthProperty().addListener((observable, oldValue, newValue) -> ClientAPI.canvasUpdate());
         scene.heightProperty().addListener((observable, oldValue, newValue) -> ClientAPI.canvasUpdate());
-
-        //root.getChildren().add(canvas);
         
         primaryStage.setTitle("Hexagon World");
         primaryStage.setScene(scene);
-        //shift = new Point(scene.getWidth()/2,scene.getHeight()/2);
-
-        /*Path path1 = Geometry.createHexagonPath(7, 7, 2);
-        path1.setFill(Color.GREEN);
-        Client.getRoot().getChildren().add(path1);
-
-        Path path2 = Geometry.createHexagonPath(3, 7 ,2);
-        path2.setFill(Color.RED);
-        Client.getRoot().getChildren().add(path2);
-
-        Path path3 = Geometry.createHexagonPath(3, 7 ,1);
-        path3.setFill(Color.CYAN);
-        Client.getRoot().getChildren().add(path3);*/
-
-        viewType = ViewType.FOLLOW;
-        //mapCanvas = new Canvas(root.getWidth(),root.getHeight());
-        //root.getChildren().add(mapCanvas);
-
         ClientAPI.canvasUpdate();
 
         primaryStage.show();
@@ -176,14 +151,11 @@ public class Client extends Application implements TCPReceiver {
             log.error("Argument parsing error "+ e.getMessage());
         }
     }
-    private void tick(){
-
-    }
     private static void startCLI() {
         String script = "ClientAPI.changeName(name)";
         try {
             engine.put("ClientAPI", clientAPI);
-            engine.put("name", "nameM");
+            engine.put("name", player.getName());
 
             engine.eval(script);
         } catch (ScriptException e) {
@@ -193,13 +165,14 @@ public class Client extends Application implements TCPReceiver {
         Thread startCLIThread = new Thread(() -> {
             Scanner scanner = new Scanner(System.in);
             while (true) {
+
                 String command = scanner.nextLine().trim();
                 if (command.equalsIgnoreCase("help")) {
-                    log.info("help or h for help list");
+                    //TODO create command objects with decription
                 }else if (command.startsWith("player")){
                     ClientChat.clientChat("Player: "+Client.getPlayer());
-                }else if (command.startsWith("shift")){
-                    //ClientChat.clientChat("Shift: "+ Client.getShift());
+                }else if (command.startsWith("chat ")){
+                    ClientAPI.chat(command.substring(4));
                 }else if (command.startsWith("api ")){
                     String apiCmd = "ClientAPI."+ command.substring(4);
                     try {
@@ -209,6 +182,7 @@ public class Client extends Application implements TCPReceiver {
                     }
                 }else{
                     log.error("Invalid command " + command);
+                    log.info("help or h for help list");
                 }
             }
         });
@@ -224,8 +198,8 @@ public class Client extends Application implements TCPReceiver {
             inputStream = tcpClientSocket.getInputStream();
             objectInputStream = new ObjectInputStream(inputStream);
         } catch (IOException e){
-            log.error("Error client during stream creation " + e.getMessage() );
-            return; //TODO
+            log.terror("Error client during stream creation " + e.getMessage() );
+            return;
         }
 
         while(true){

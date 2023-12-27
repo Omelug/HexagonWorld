@@ -11,6 +11,7 @@ import lombok.Getter;
 
 
 public class Geometry {
+  private static final CLog log = new CLog(CLog.ConsoleColors.CYAN_BRIGHT);
 
   public static void drawHexagon(GraphicsContext gc, double centerX, double centerY, double size) {
 
@@ -18,8 +19,8 @@ public class Geometry {
     double[] yPoints = new double[HEXA_MOVE.values().length];
 
     for (int i = 0; i < HEXA_MOVE.values().length; i++) {
-      xPoints[i] = centerX + HEXA_MOVE.values()[i].getX()*size;
-      yPoints[i] = centerY + HEXA_MOVE.values()[i].getY()*size;
+      xPoints[i] = centerX + HEXA_MOVE.get(i).getX()*size;
+      yPoints[i] = centerY + HEXA_MOVE.get(i).getY()*size;
     }
 
 
@@ -36,20 +37,36 @@ public class Geometry {
     gc.strokePolygon(xPoints, yPoints, HEXA_MOVE.values().length);
   }
 
-  //hexagon
-  //public static final int HEXAGON_BORDERS = 6;
+  public static HEXA_MOVE rotate180(HEXA_MOVE move) {
+    return HEXA_MOVE.get((move.ordinal()+HEXA_MOVE.values().length/2)%HEXA_MOVE.values().length);
+  }
+
+  @Getter
   @AllArgsConstructor
   public enum HEXA_MOVE{UP(0,-2),RIGHT_UP(1,-1), RIGHT_DOWN(1,1),DOWN(0,2),LEFT_DOWN(-1,1),LEFT_UP(-1,-1);
-    @Getter
     final double x,y;
-  }
-  public enum HEXAGON_BORDERS{R_UP,R, R_D,L_D,L, L_U}
 
-  private static CLog log = new CLog(CLog.ConsoleColors.CYAN_BRIGHT);
+    public static HEXA_MOVE get(int ordinal) {
+      return values()[ordinal%values().length];
+    }
+  }
+
+  @Getter
+  @AllArgsConstructor
+  public enum HEXAGON_BORDERS{R_UP(1,-3),R(2,0), R_D(1,3),L_D(-1,3),L(-2,0), L_U(-1,-3);
+    final double x,y;
+    public static HEXAGON_BORDERS get(int ordinal) {
+      int cislo = ordinal%values().length;
+      if(cislo< 0){
+        cislo = (ordinal+values().length)%values().length;
+      } //TODO pokudd je to potom v minusu, hodit error
+      return values()[cislo];
+    }
+  }
 
   public static Path createHexagonPath(double centerX, double centerY, double size) {
     Path hexagonPath = new Path();
-    Point sizePoint = multiplePoint(Client.getVIEW_UNIT(),size); //TODO
+    Point sizePoint = multiplePoint(Client.getVIEW_UNIT(),size);
 
     centerX *= Client.getVIEW_UNIT().getX();
     centerY *= Client.getVIEW_UNIT().getY();
@@ -99,7 +116,7 @@ public class Geometry {
   public static void moveAllChildren(HEXA_MOVE move) {
     moveAllChildren(move.getX(), move.getY());
   }
-  public static void moveNoPlayer(double deltaX, double deltaY) {
+  /**public static void moveNoPlayer(double deltaX, double deltaY) {
     for (Node node : Client.getRoot().getChildren()) {
       if (node != Player.getHexagonPath()) {
         node.setTranslateX(node.getTranslateX() + deltaX);
@@ -109,7 +126,7 @@ public class Geometry {
   }
   public static void moveNoPlayerR(HEXA_MOVE move) {
     moveNoPlayer(-move.getX()*Client.getVIEW_UNIT().getX(), -move.getY()*Client.getVIEW_UNIT().getY());
-  }
+  }**/
   public static void multiplyArray(double[] array, double factor) {
     for (int i = 0; i < array.length; i++) {
       array[i] *= factor;

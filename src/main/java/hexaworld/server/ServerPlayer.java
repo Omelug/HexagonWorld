@@ -58,8 +58,8 @@ public class ServerPlayer implements TCPReceiver {
       objectInputStream = new ObjectInputStream(inputStream);
       objectOutputStream = new ObjectOutputStream(clientSocket.getOutputStream());
     } catch (IOException e){
-      log.error("Error during stream creation");
-      return; //TODO
+      log.terror("Error during stream creation");
+      return;
     }
 
 
@@ -89,8 +89,10 @@ public class ServerPlayer implements TCPReceiver {
               objectOutputStream.writeObject(chunk);
               objectOutputStream.flush();
             }
-          }if (packetType == Packet.PacketType.LOGIN.ordinal()) {
+          }else if (packetType == Packet.PacketType.LOGIN.ordinal()) {
             login();
+          } else if (packetType == Packet.PacketType.CHAT.ordinal()) {
+            Chat.msgAll("[" + name + "]" + (String) objectInputStream.readObject());
           }
       } catch(EOFException e) {
         continue;

@@ -4,32 +4,38 @@ import hexaworld.geometry.Geometry;
 import hexaworld.geometry.Point;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Path;
-import hexaworld.server.ServerConfig;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
-
 import java.util.Map;
-
-import static javafx.scene.input.KeyCode.W;
 
 public class Player{
 
   @Getter @Setter
   private static Point position = new Point(0,0);
-  private static final Color hexagonColor = Color.CYAN;//TODO const
+  //TODO move client const to config file
+  private static final Color hexagonColor = Color.CYAN;
+  private static Map<KeyCode, Geometry.HEXA_MOVE> keyBindMove = Map.of(
+          KeyCode.W, Geometry.HEXA_MOVE.UP,
+          KeyCode.S, Geometry.HEXA_MOVE.DOWN,
+          KeyCode.A, Geometry.HEXA_MOVE.LEFT_DOWN,
+          KeyCode.Q, Geometry.HEXA_MOVE.LEFT_UP,
+          KeyCode.D, Geometry.HEXA_MOVE.RIGHT_DOWN,
+          KeyCode.E, Geometry.HEXA_MOVE.RIGHT_UP
+  );
+  Map<KeyCode, Point> keyBindShift = Map.of(
+          KeyCode.UP, new Point(0,Client.getZOOM()),
+          KeyCode.DOWN, new Point(0,-Client.getZOOM()),
+          KeyCode.LEFT, new Point(Client.getZOOM(),0),
+          KeyCode.RIGHT, new Point(-Client.getZOOM(),0)
+  );
+
+  private static final double size = 0.8;
+
   @Getter
-  private static Path hexagonPath;
-  private static double size = 0.8;
-  @Getter
-  private String name = "Player42";
+  private final String name;
   @Getter @Setter
   private int energy = 0;
-  private static final double MIN_SCALE = 0.1;
 
   public Player( String name) {
     this.name = name;
@@ -40,7 +46,7 @@ public class Player{
     if (!Client.getRoot().getChildren().contains(hexagonPath)) {
       Client.getRoot().getChildren().add(hexagonPath);
     }*/
-    gc.setFill(Color.CYAN);
+    gc.setFill(hexagonColor);
     Geometry.drawHexagon(gc,position.getX(), position.getY(), size);
   }
 
@@ -49,30 +55,22 @@ public class Player{
   }
 
   public void handleKeyPress(KeyCode code) {
-    //Client.log.debug("Pressed " + code);
     //TODO sent to server and check correction if is not possible
 
-    Map<KeyCode, Geometry.HEXA_MOVE> keyBindMove = Map.of(
-            KeyCode.W, Geometry.HEXA_MOVE.UP,
-            KeyCode.S, Geometry.HEXA_MOVE.DOWN,
-            KeyCode.A, Geometry.HEXA_MOVE.LEFT_DOWN,
-            KeyCode.Q, Geometry.HEXA_MOVE.LEFT_UP,
-            KeyCode.D, Geometry.HEXA_MOVE.RIGHT_DOWN,
-            KeyCode.E, Geometry.HEXA_MOVE.RIGHT_UP
-    );
+    Geometry.HEXA_MOVE move = keyBindMove.get(code);
 
-    if(null != keyBindMove.get(code)){
-      position.add(keyBindMove.get(code));
-      //Geometry.moveNoPlayerR(keyBindMove.get(code)); //TODO čelem vzad, pozadi se pohybuje opacne a jsou to nějak male kroky
+    if(null != move){
+      if(Client.getViewType() == Client.ViewType.FOLLOW){
+        Geometry.HEXA_MOVE move180 = Geometry.rotate180(move);
+        Client.getShift().add(new Point(move180.getX()*Client.getVIEW_UNIT().getX(),move180.getY()*Client.getVIEW_UNIT().getY()));
+        position.add(move);
+        ClientAPI.canvasUpdate();
+      }else{
+        position.add(move);
+      }
       ClientAPI.playerCanvasUpdate();
       return;
     }
-    Map<KeyCode, Point> keyBindShift = Map.of(
-            KeyCode.UP, new Point(0,Client.getZOOM()),
-            KeyCode.DOWN, new Point(0,-Client.getZOOM()),
-            KeyCode.LEFT, new Point(Client.getZOOM(),0),
-            KeyCode.RIGHT, new Point(-Client.getZOOM(),0)
-    );
 
     Point deltaShift = keyBindShift.get(code);
     if(null != deltaShift){
@@ -80,13 +78,6 @@ public class Player{
       ClientAPI.canvasUpdate();
     }
 
-  }
-
-  public void zoom(double zoomFactor) {
-    double currentScale = Math.max(zoomFactor * hexagonPath.getScaleX(), MIN_SCALE);
-    hexagonPath.setScaleX(currentScale);
-    hexagonPath.setScaleY(currentScale);
-    size *= zoomFactor;
   }
 
   @Override

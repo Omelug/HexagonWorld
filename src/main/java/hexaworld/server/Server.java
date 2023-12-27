@@ -1,16 +1,14 @@
 package hexaworld.server;
 
 import hexaworld.CLog;
-import hexaworld.client.Client;
-import hexaworld.net.Packet;
 import lombok.Getter;
-
-import javax.script.ScriptEngine;
-import javax.script.ScriptException;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+import java.util.StringJoiner;
 
 public class Server implements Runnable{
   static private final CLog log = new CLog(CLog.ConsoleColors.PURPLE);
@@ -43,8 +41,7 @@ public class Server implements Runnable{
             log.info("Client connected [" + clientSocket.getInetAddress() + ":" + clientSocket.getPort()+"]");
             players.add(new ServerPlayer(clientSocket));
           } catch (IOException e) {
-            log.error(e.getMessage());
-            e.printStackTrace();
+            log.terror(e.getMessage());
           }
         }
       });
