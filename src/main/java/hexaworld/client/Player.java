@@ -50,6 +50,18 @@ public class Player{
     Geometry.drawHexagon(gc,position.getX(), position.getY(), size);
   }
 
+  public static void moveFollow(Geometry.HEXA_MOVE move) {
+    if(Client.getViewType() == Client.ViewType.FOLLOW){
+      Geometry.HEXA_MOVE move180 = Geometry.rotate180(move);
+      Client.getShift().add(new Point(move180.getX()*Client.getVIEW_UNIT().getX(),move180.getY()*Client.getVIEW_UNIT().getY()));
+      position.add(move);
+      ClientAPI.canvasUpdate();
+    }else{
+      position.add(move);
+    }
+    //ClientAPI.playerCanvasUpdate();
+  }
+
   void move(double deltaX, double deltaY) {
     position.add(deltaX,deltaY);
   }
@@ -60,15 +72,8 @@ public class Player{
     Geometry.HEXA_MOVE move = keyBindMove.get(code);
 
     if(null != move){
-      if(Client.getViewType() == Client.ViewType.FOLLOW){
-        Geometry.HEXA_MOVE move180 = Geometry.rotate180(move);
-        Client.getShift().add(new Point(move180.getX()*Client.getVIEW_UNIT().getX(),move180.getY()*Client.getVIEW_UNIT().getY()));
-        position.add(move);
-        ClientAPI.canvasUpdate();
-      }else{
-        position.add(move);
-      }
-      ClientAPI.playerCanvasUpdate();
+      ClientAPI.move(move); //send move to server
+      ClientAPI.movePlayerFollow(move);
       return;
     }
 

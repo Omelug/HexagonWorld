@@ -2,13 +2,17 @@ package hexaworld.client;
 
 import hexaworld.CLog;
 import hexaworld.geometry.Chunk;
+import hexaworld.geometry.Geometry;
 import hexaworld.geometry.Point;
 import hexaworld.net.Packet;
 import hexaworld.net.TCPReceiver;
+import hexaworld.server.ServerAPI;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.layout.Background;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import lombok.Getter;
@@ -33,16 +37,17 @@ public class Client extends Application implements TCPReceiver {
     public static final CLog log = new CLog(CLog.ConsoleColors.GREEN);
 
 
-    public enum ViewType{FOLLOW};
+    public enum ViewType{FOLLOW}
 
 
-    @Getter @Setter
+  @Getter @Setter
     private static Point shift = new Point(0,0);
     @Getter @Setter
     private static ViewType viewType = ViewType.FOLLOW; //TODO constant to config
     @Getter
     private static Socket tcpSocket;
     @Getter
+    @FXML
     private static final Pane root = new Pane();
     @Getter @Setter
     private static Canvas mapCanvas, playerCanvas;
@@ -208,10 +213,10 @@ public class Client extends Application implements TCPReceiver {
 
                 if (packetType == Packet.PacketType.CHAT.ordinal()){
                     ClientChat.clientChat( (String) objectInputStream.readObject());
-                }if (packetType == Packet.PacketType.LOGIN.ordinal()){
+                }else if (packetType == Packet.PacketType.LOGIN.ordinal()){
                     Player.setPosition((Point) objectInputStream.readObject());
                     player.setEnergy(objectInputStream.readInt());
-                }if (packetType == Packet.PacketType.CHUNK.ordinal()){
+                }else if (packetType == Packet.PacketType.CHUNK.ordinal()){
                     Chunk newChunk = (Chunk) objectInputStream.readObject();
 
                     boolean chunkExists = false;
@@ -227,6 +232,22 @@ public class Client extends Application implements TCPReceiver {
                         if(mapCanvas != null){
                             newChunk.draw();
                         }
+                    }
+                }else if (packetType == Packet.PacketType.CORRECTION.ordinal()){
+                    int command = objectInputStream.readInt();
+                    if (command == ServerAPI.COMMAND.MOVE.ordinal()) {
+
+                      Geometry.HEXA_MOVE move = (Geometry.HEXA_MOVE) objectInputStream.readObject(); //move what was not accepted by server
+
+                      /*double newPosX = objectInputStream.readDouble();
+                      double newPosY = objectInputStream.readDouble();
+                      Point newPos = new Point(newPosX,newPosY);*/
+
+                      ClientChat.clientChat("undo " + move);
+                      Platform.runLater(() -> {
+                        ClientAPI.movePlayerFollow(Geometry.rotate180(move));
+                      });
+                      //log.debug("" + Player.getPosition());
                     }
                 }
             } catch(EOFException e) {

@@ -36,7 +36,8 @@ public class Packet {
     CHAT,
     TICK,
     CHAT_UPDATE,
-    CHUNK
+    CHUNK,
+    CORRECTION;
   }
 
   @Getter

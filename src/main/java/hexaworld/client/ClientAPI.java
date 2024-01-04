@@ -126,4 +126,19 @@ public class ClientAPI {
       Client.log.error("Error chat " + e.getMessage());
     }
   }
+
+  public static void move(Geometry.HEXA_MOVE move) {
+    try{
+      objectOutputStream.writeInt(Packet.PacketType.COMMAND.ordinal());
+      objectOutputStream.writeInt(ServerAPI.COMMAND.MOVE.ordinal());
+      objectOutputStream.writeObject(move);
+      objectOutputStream.flush();
+    } catch (IOException e) {
+      Client.log.error("Error move " + e.getMessage());
+    }
+  }
+
+  public static void movePlayerFollow(Geometry.HEXA_MOVE move) {
+    Player.moveFollow(move);
+  }
 }
