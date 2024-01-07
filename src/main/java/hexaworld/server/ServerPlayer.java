@@ -1,57 +1,50 @@
 package hexaworld.server;
 
-import hexaworld.CLog;
+import hexaworld.cli.CLog;
 import hexaworld.client.Client;
 import hexaworld.geometry.Chunk;
-import hexaworld.geometry.Geometry;
 import hexaworld.geometry.Point;
 import hexaworld.net.Packet;
 import hexaworld.net.TCPReceiver;
+import hexaworld.server.commands.Command;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static hexaworld.net.Packet.PacketType.*;
-import static hexaworld.server.ServerAPI.COMMAND.*;
+import static hexaworld.net.Packet.PacketType.COMMAND;
+import static hexaworld.server.ServerAPI.COMMAND.CHANGE_NAME;
+
 
 public class ServerPlayer implements TCPReceiver {
   static private final CLog log = new CLog(CLog.ConsoleColors.BLUE);
 
-  @Getter
-  private String name = null;
-  @Getter
-  private Point position = new Point(0,0);
-  @Getter
-  private int energy = ServerConfig.getEnergyTable().get(CHANGE_NAME)+30;//TODO +50 for testing
 
-  private List<Change> tickChanges;
+  @Getter @Setter
+  private String name = null;
+  @Getter @Setter
+  private int tickBlocker = 0;
+  @Getter
+  private final Point position = new Point(0,0);
+  @Getter @Setter
+  private int energy = ServerConfig.getCommandTable().get(CHANGE_NAME).getEnergy()+30;//TODO +30 for testing
+  @Getter @Setter
+  private List<Command> waitCmdList;
   @Getter
   private final Socket clientSocket;
   @Getter
   private ObjectOutputStream objectOutputStream;
-  private Set<Chunk> visibleChunks = new HashSet<>();
+  @Getter @Setter
+  private final Set<Chunk> visibleChunks = new HashSet<>();
 
   public ServerPlayer(Socket clientSocket){
     this.clientSocket = clientSocket;
     Thread tcpStart = new Thread(() -> receiveTCP(clientSocket));
     tcpStart.start();
-  }
-  boolean payForCmd(int command, ServerAPI.COMMAND testedCmd){ //TODO only command without waiting
-    int need = ServerConfig.getEnergyTable().get(testedCmd);
-    if (command == testedCmd.ordinal()){
-      if (need <= energy){
-        energy -= need;
-        return true;
-      }else{
-        Chat.msg(this,  CLog.ConsoleColors.RED+ "Not enough energy need " + need+". You have " + energy +"."+ CLog.ConsoleColors.RESET);
-      }
-    }
-    return false;
   }
   @Override
   public void receiveTCP(Socket tcpClientSocket) {
@@ -71,95 +64,39 @@ public class ServerPlayer implements TCPReceiver {
     while(true){
       try {
         int packetType = objectInputStream.readInt();
-        System.out.print("  "+packetType +".");
+        //log.debug("  "+packetType +".");
           if (packetType == COMMAND.ordinal()){
             int command = objectInputStream.readInt();
-            System.out.print(command+ ":");
-
-            if (payForCmd(command,CHANGE_NAME)) {
-              String newUsername = (String) objectInputStream.readObject();
-              if (name == null){
-                Chat.msgAll(CLog.ConsoleColors.GREEN + " + "+newUsername + " " + CLog.ConsoleColors.RESET);
-              }else{
-                Chat.msgAll(name + " changed name to " + newUsername);
-              }
-              name = newUsername;
-            }else if (payForCmd(command,LOAD_CHUNK)) {
-
-              Chunk chunk = Map.loadChunk((Point) objectInputStream.readObject());
-              visibleChunks.add(chunk);
-
-              objectOutputStream.writeInt(CHUNK.ordinal());
-              objectOutputStream.writeObject(chunk);
-              objectOutputStream.flush();
-            }else if (command == MOVE.ordinal()) {
-
-              //log.debug(position + " will be changed");
-
-              Geometry.HEXA_MOVE move = (Geometry.HEXA_MOVE) objectInputStream.readObject();
-              if (payForCmd(command, MOVE)){
-                position.add(move);
-                continue;
-              }
-              objectOutputStream.writeInt(CORRECTION.ordinal());
-              objectOutputStream.writeInt(MOVE.ordinal());
-              objectOutputStream.writeObject(move);
-
-              //objectOutputStream.writeDouble(position.getX());
-              //objectOutputStream.writeDouble(position.getY());
-              objectOutputStream.flush();
-
-              //log.debug("Sent packet content: " + getPacketContentAsString());
-
+            //log.debug(command+ ":");
+            Command cmd = new Command(this,ServerAPI.COMMAND.get(command));
+            cmd.saveInput(objectInputStream);
+            if (tickBlocker == 0){
+              cmd.run();
+            }else{
+              //cmd.saveInput(objectInputStream);
+              //cmd.addToWaitList();
+              //TODO send WAIT
+              log.debug("Waiting is not implemented yet, tickBlocker:" + tickBlocker);
             }
           }else if (packetType == Packet.PacketType.LOGIN.ordinal()) {
             login();
           } else if (packetType == Packet.PacketType.CHAT.ordinal()) {
-            Chat.msgAll("[" + name + "]" + (String) objectInputStream.readObject());
+            Chat.msgAll("[" + name + "]" + objectInputStream.readObject());
           }
       } catch(EOFException e) {
-        log.debug(  "EOFException" + tcpClientSocket.isConnected());
-        e.printStackTrace();
+        log.info( "EOFException" + tcpClientSocket.isConnected());
+        //e.printStackTrace();
         kick();
         break;
       }catch (IOException | ClassNotFoundException e) {
+        log.info("Connection error " + e.getMessage());
         kick();
         break;
       }
     }
   }
 
-
-  private String getPacketContentAsString() {
-    try {
-      // Create a temporary ByteArrayOutputStream to capture the binary data
-      ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-
-      // Use another ObjectOutputStream for writing to the temporary stream
-      ObjectOutputStream tempObjectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-
-      // Write the same data to the temporary stream
-      tempObjectOutputStream.writeInt(CORRECTION.ordinal());
-      tempObjectOutputStream.writeInt(MOVE.ordinal());
-      tempObjectOutputStream.writeObject(position);
-      tempObjectOutputStream.flush();
-
-      // Convert the binary data to a Base64-encoded string
-      byte[] binaryData = byteArrayOutputStream.toByteArray();
-      String base64Encoded = Base64.getEncoder().encodeToString(binaryData);
-
-      // Close the temporary stream
-      tempObjectOutputStream.close();
-
-      return base64Encoded;
-    } catch (IOException e) {
-      // Handle exceptions
-      e.printStackTrace();
-      return null;
-    }
-  }
-
-  private void tick(){
+  /*private void tick(){
     try {
       objectOutputStream.writeInt(Packet.PacketType.TICK.ordinal());
       objectOutputStream.writeInt(energy);
@@ -171,7 +108,7 @@ public class ServerPlayer implements TCPReceiver {
     } catch (IOException e) {
       log.error("TICK error");
     }
-  }
+  }*/
 
   private void login() {
     try {
@@ -185,7 +122,7 @@ public class ServerPlayer implements TCPReceiver {
   }
 
   public void kick() {
-    Chat.msg(this,"You are kicking out");
+    Chat.msg(this, name + " kicking out");
     try {
       clientSocket.close();
     } catch (IOException e) {

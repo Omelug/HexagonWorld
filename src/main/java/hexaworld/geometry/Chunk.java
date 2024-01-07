@@ -3,9 +3,7 @@ package hexaworld.geometry;
 import hexaworld.client.Client;
 import hexaworld.server.ServerConfig;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Path;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

@@ -1,4 +1,4 @@
-package hexaworld;
+package hexaworld.cli;
 
 import javafx.scene.paint.Color;
 

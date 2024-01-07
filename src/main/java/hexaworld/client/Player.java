@@ -15,7 +15,8 @@ public class Player{
   private static Point position = new Point(0,0);
   //TODO move client const to config file
   private static final Color hexagonColor = Color.CYAN;
-  private static Map<KeyCode, Geometry.HEXA_MOVE> keyBindMove = Map.of(
+
+  private final Map<KeyCode, Geometry.HEXA_MOVE> keyBindMove = Map.of(
           KeyCode.W, Geometry.HEXA_MOVE.UP,
           KeyCode.S, Geometry.HEXA_MOVE.DOWN,
           KeyCode.A, Geometry.HEXA_MOVE.LEFT_DOWN,
@@ -41,11 +42,6 @@ public class Player{
     this.name = name;
   }
   public static void draw(GraphicsContext gc){
-    /*hexagonPath = Geometry.createHexagonPath(position.getX(), position.getY(), size);
-    hexagonPath.setFill(hexagonColor);
-    if (!Client.getRoot().getChildren().contains(hexagonPath)) {
-      Client.getRoot().getChildren().add(hexagonPath);
-    }*/
     gc.setFill(hexagonColor);
     Geometry.drawHexagon(gc,position.getX(), position.getY(), size);
   }
@@ -59,7 +55,6 @@ public class Player{
     }else{
       position.add(move);
     }
-    //ClientAPI.playerCanvasUpdate();
   }
 
   void move(double deltaX, double deltaY) {

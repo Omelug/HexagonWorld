@@ -1,15 +1,8 @@
 package hexaworld.tests;
 
-import hexaworld.CLog;
-import hexaworld.geometry.Geometry;
+import hexaworld.cli.CLog;
 import hexaworld.geometry.Point;
-import javafx.scene.paint.Color;
 import lombok.AllArgsConstructor;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static hexaworld.geometry.Geometry.posInChunk;
 

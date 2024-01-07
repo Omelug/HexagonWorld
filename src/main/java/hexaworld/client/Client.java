@@ -1,6 +1,7 @@
 package hexaworld.client;
 
-import hexaworld.CLog;
+import hexaworld.cli.CLog;
+import hexaworld.cli.CliCommand;
 import hexaworld.geometry.Chunk;
 import hexaworld.geometry.Geometry;
 import hexaworld.geometry.Point;
@@ -12,7 +13,6 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.layout.Background;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import lombok.Getter;
@@ -29,9 +29,7 @@ import java.io.ObjectInputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public class Client extends Application implements TCPReceiver {
     public static final CLog log = new CLog(CLog.ConsoleColors.GREEN);
@@ -156,6 +154,14 @@ public class Client extends Application implements TCPReceiver {
             log.error("Argument parsing error "+ e.getMessage());
         }
     }
+
+    public static final Set<CliCommand> cmdList = Set.of(
+      new CliCommand("help", "show help list"),
+      new CliCommand("player","show client player data"),
+      new CliCommand("chat", "chat <msg> for send msg"),
+      new CliCommand("api", "api <cmd> for running ClientAPI.<cmd> form python ")
+    );
+
     private static void startCLI() {
         String script = "ClientAPI.changeName(name)";
         try {
@@ -171,9 +177,12 @@ public class Client extends Application implements TCPReceiver {
             Scanner scanner = new Scanner(System.in);
             while (true) {
 
-                String command = scanner.nextLine().trim();
-                if (command.equalsIgnoreCase("help")) {
-                    //TODO create command objects with decription
+              String command = scanner.nextLine().trim();
+
+              if (command.equalsIgnoreCase("help")) {
+                  for (CliCommand cmd : cmdList) {
+                    ClientChat.clientChat(CLog.ConsoleColors.CYAN+ cmd.getCmd()+" : "+CLog.ConsoleColors.WHITE +cmd.getDescription());
+                  }
                 }else if (command.startsWith("player")){
                     ClientChat.clientChat("Player: "+Client.getPlayer());
                 }else if (command.startsWith("chat ")){
@@ -261,7 +270,8 @@ public class Client extends Application implements TCPReceiver {
 
     private static class ClientChat{
         public static void clientChat(String msg){
-            System.out.print("chat: " +msg+ "\n");
+            System.out.print("chat: " +msg+ "\n" + CLog.ConsoleColors.RESET);
         }
     }
+
 }

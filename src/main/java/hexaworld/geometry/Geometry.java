@@ -1,8 +1,7 @@
 package hexaworld.geometry;
 
-import hexaworld.CLog;
+import hexaworld.cli.CLog;
 import hexaworld.client.Client;
-import hexaworld.client.Player;
 import javafx.scene.Node;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.shape.*;
@@ -59,7 +58,7 @@ public class Geometry {
       int cislo = ordinal%values().length;
       if(cislo< 0){
         cislo = (ordinal+values().length)%values().length;
-      } //TODO pokudd je to potom v minusu, hodit error
+      } //TODO pokud je to potom v minusu, hodit error
       return values()[cislo];
     }
   }

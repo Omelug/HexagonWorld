@@ -1,14 +1,7 @@
 package hexaworld.net;
 
-import hexaworld.CLog;
-import hexaworld.server.ServerAPI;
+import hexaworld.cli.CLog;
 import lombok.Getter;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.net.Socket;
 
 public class Packet {
   static final CLog log = new CLog(CLog.ConsoleColors.CYAN_BOLD);

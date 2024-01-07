@@ -1,6 +1,6 @@
 package hexaworld.server;
 
-import hexaworld.CLog;
+import hexaworld.cli.CLog;
 import lombok.Getter;
 import java.io.IOException;
 import java.net.ServerSocket;

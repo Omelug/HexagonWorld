@@ -9,7 +9,7 @@ import java.util.Set;
 
 public class Map{
   Set<Chunk> loadedChunks = new HashSet<>();
-  static Chunk loadChunk(Point point) {
+  public static Chunk loadChunk(Point point) {
       Chunk chunk = Chunk.generateChunk(point);
       //chunk.loadChanges(); //TODO load changes
       return chunk;

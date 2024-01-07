@@ -10,4 +10,6 @@ module hexaworld {
   exports hexaworld.client;
   exports hexaworld.geometry;
   exports tests.example.hexaworld;
+  exports hexaworld.cli;
+  opens hexaworld.cli to javafx.graphics;
 }
