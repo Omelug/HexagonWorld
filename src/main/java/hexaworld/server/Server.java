@@ -82,14 +82,14 @@ public class Server implements Runnable{
           printPlayerList();
         }else if (command.startsWith("kick ")){
           ServerPlayer player = getPlayerByName(command.substring(5));
-          if (player == null){continue;}
+          if (player == null){log.error(command.substring(5) + " is not here");continue;}
           player.kick();
           Chat.msgAll(command.substring(5) + " kicked out");
         }else if( command.startsWith("chat ")){
           Chat.msgAll("[Server] " + command.substring(5));
         }else if( command.startsWith("wl ")){ //waitList
           ServerPlayer player = getPlayerByName(command.substring(3));
-          if (player == null){continue;}//TODO tohle je tu dvakrat a a to je hnusne
+          if (player == null){log.error(command.substring(3) + " is not here");continue;}//TODO tohle je tu dvakrat a a to je hnusne
           System.out.println(player.getName() + " waiting list: ");
 
           Iterator<Command> iterator = player.getWaitCmdList().iterator();
@@ -153,7 +153,6 @@ public class Server implements Runnable{
             .filter(player -> name.equals(player.getName()))
             .findFirst();
     if (result.isEmpty()){
-      log.error(name + " is not here");
       return null;
     }
     return result.get();

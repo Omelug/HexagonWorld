@@ -68,11 +68,11 @@ public class Command {
         case CHANGE_NAME:
           String newUsername;
           newUsername = (String) objectList.get(0);
-          if(Server.getPlayerByName(newUsername) != null){
+          /*if(Server.getPlayerByName(newUsername) != null){
             Chat.msg(player, "User with name " + newUsername + " already exist");
             deny();
             break;
-          }
+          }*/
           if (player.getName() == null) {
             Chat.msgAll(CLog.ConsoleColors.GREEN + " + " + newUsername + " " + CLog.ConsoleColors.RESET);
           } else {
@@ -98,7 +98,9 @@ public class Command {
     } catch (IOException e) {
       log.error( commandType + " accept IOException " + e.getMessage());
     }finally {
-      player.getWaitCmdList().remove( player.getWaitCmdList().size()-1);
+      if(!player.getWaitCmdList().isEmpty()){ //FIXME, jakto6e tu muze byt waitList prazdny
+        player.getWaitCmdList().remove( player.getWaitCmdList().size()-1);
+      }
     }
   }
 
