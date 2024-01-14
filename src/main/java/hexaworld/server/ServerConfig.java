@@ -23,7 +23,7 @@ public class ServerConfig {
 
   public static int
           FREE_CHUNK = 19,
-          PLAYER_STACK = 10,
+          PLAYER_WAIT_LIST_SIZE = 10,
           TCP_PORT = 42,
           TPS = 10;
   public static final double MAP_SEED = 42;

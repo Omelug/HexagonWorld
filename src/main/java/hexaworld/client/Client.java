@@ -245,6 +245,7 @@ public class Client extends Application implements TCPReceiver {
                       chunks.add(newChunk);
                       if(mapCanvas != null){
                         newChunk.draw();
+                        Chunk.drawTriangles(mapCanvas.getGraphicsContext2D(), newChunk);
                       }
                     }
                   }

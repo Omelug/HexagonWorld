@@ -3,6 +3,7 @@ package hexaworld.server;
 import hexaworld.cli.CLog;
 import hexaworld.client.Player;
 import hexaworld.geometry.Chunk;
+import hexaworld.server.commands.Command;
 import lombok.Getter;
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -72,6 +73,7 @@ public class Server implements Runnable{
 
   private void startCLI() {
 
+    //TODO tohle musi byt hezci, enum nebo objekty na cliCmd
     Thread startCLIThread = new Thread(() -> {
       Scanner scanner = new Scanner(System.in);
       while (true) {
@@ -80,35 +82,87 @@ public class Server implements Runnable{
           printPlayerList();
         }else if (command.startsWith("kick ")){
           ServerPlayer player = getPlayerByName(command.substring(5));
-          if (player == null){
-            log.error(command.substring(5) + "t is not here");
-            continue;
-          }
+          if (player == null){continue;}
           player.kick();
           Chat.msgAll(command.substring(5) + " kicked out");
         }else if( command.startsWith("chat ")){
           Chat.msgAll("[Server] " + command.substring(5));
-        }else{
+        }else if( command.startsWith("wl ")){ //waitList
+          ServerPlayer player = getPlayerByName(command.substring(3));
+          if (player == null){continue;}//TODO tohle je tu dvakrat a a to je hnusne
+          System.out.println(player.getName() + " waiting list: ");
+
+          Iterator<Command> iterator = player.getWaitCmdList().iterator();
+          while (iterator.hasNext()) {
+            Command cmd = iterator.next();
+            System.out.println(cmd);
+          }
+
+        }else if(command.equals("clear")){
+          clearConsole();
+        }else if(command.startsWith("run ")){
+          ServerPlayer player = getPlayerByName(command.substring(4));
+          if (player == null){continue;}
+          if (player.getWaitCmdList().isEmpty()){
+            log.error( player.getName()+ "'s waitCmdList is empty");
+            continue;
+          }
+          player.getWaitCmdList().get( player.getWaitCmdList().size()-1).run();
+        }else if(command.startsWith("deny ")){
+          ServerPlayer player = getPlayerByName(command.substring(5));
+          if (player == null){continue;}
+          if (player.getWaitCmdList().isEmpty()){
+            log.error( player.getName()+ "'s waitCmdList is empty");
+            continue;
+          }
+          player.getWaitCmdList().get( player.getWaitCmdList().size()-1).deny();
+        }else if(command.startsWith("accept ")){
+          ServerPlayer player = getPlayerByName(command.substring(7));
+          if (player == null){continue;}
+          if (player.getWaitCmdList().isEmpty()){
+            log.error( player.getName()+ "'s waitCmdList is empty");
+            continue;
+          }
+          player.getWaitCmdList().get( player.getWaitCmdList().size()-1).accept();
+        } else{
           log.error("Invalid command " + command);
         }
       }
     });
     startCLIThread.start();
   }
-  //only first player of this name
-  private ServerPlayer getPlayerByName(String name) {
-    for (ServerPlayer player : players){
-      if (name.equals(player.getName())){
-        return player;
+
+  public static void clearConsole() { //TODO check if this work (dont work in IDE)
+    try {
+      final String os = System.getProperty("os.name");
+
+      if (os.contains("Windows")) {
+        new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+      } else {
+        System.out.print("\033[H\033[2J");
+        System.out.flush();
       }
+    } catch (final Exception e) {
+      log.error("No one can clean up a mess like this");
+      //e.printStackTrace();
     }
-    return null;
+  }
+
+  public static ServerPlayer getPlayerByName(String name) {
+    Optional<ServerPlayer> result = players.stream()
+            .filter(player -> name.equals(player.getName()))
+            .findFirst();
+    if (result.isEmpty()){
+      log.error(name + " is not here");
+      return null;
+    }
+    return result.get();
   }
 
   private void printPlayerList() {
-    log.info("Player list:");
+    System.out.println("Player list:"); //TODO do some color table ?
     for (ServerPlayer player : players){
-      log.info(player + "(" +player.getEnergy()+ ") pos:" + player.getPosition());
+      System.out.println(player + "(" +player.getEnergy()+ ") pos:" + player.getPosition());
     }
   }
 
@@ -127,7 +181,7 @@ public class Server implements Runnable{
           ServerPlayer player = iterator.next();
           synchronized(player) {
             // Perform operations on player
-            player.tick();
+            //FIXME player.tick();
             //Chat.msg(player, "TICK");
           }
         }

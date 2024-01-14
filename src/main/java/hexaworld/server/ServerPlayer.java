@@ -20,6 +20,7 @@ import java.util.Set;
 
 import static hexaworld.net.Packet.PacketType.COMMAND;
 import static hexaworld.server.ServerAPI.COMMAND.CHANGE_NAME;
+import static hexaworld.server.ServerConfig.PLAYER_WAIT_LIST_SIZE;
 
 
 public class ServerPlayer implements TCPReceiver {
@@ -27,7 +28,7 @@ public class ServerPlayer implements TCPReceiver {
 
 
   @Getter @Setter
-  private String name = null;
+  private String name = "Player42";
   @Getter @Setter
   private int tickBlocker = 0;
   @Getter
@@ -75,7 +76,12 @@ public class ServerPlayer implements TCPReceiver {
             //log.debug(command+ ":");
             Command cmd = new Command(this,command);
             cmd.saveInput(objectInputStream);
-            cmd.addToWaitList();
+            if(PLAYER_WAIT_LIST_SIZE >= waitCmdList.size()){
+              cmd.addToWaitList();
+            }else{
+              log.debug("Limit of commands " + PLAYER_WAIT_LIST_SIZE +" reached ");
+              cmd.deny();
+            }
           }else if (packetType == Packet.PacketType.LOGIN) {
             login();
           } else if (packetType == Packet.PacketType.CHAT) {

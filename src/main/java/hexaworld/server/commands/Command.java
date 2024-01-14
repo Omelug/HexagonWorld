@@ -41,12 +41,12 @@ public class Command {
       return false;
   }
 
-  private void deny() {
+  public void deny() {
     try {
       ObjectOutputStream objectOutputStream = player.getObjectOutputStream();
-      objectOutputStream.writeObject(CORRECTION);
       switch (commandType){
         case MOVE:
+          objectOutputStream.writeObject(CORRECTION);
           objectOutputStream.writeObject(MOVE);
           Geometry.HEXA_MOVE correction = (Geometry.HEXA_MOVE) objectList.get(0);
 
@@ -59,15 +59,20 @@ public class Command {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-
+    player.getWaitCmdList().remove( player.getWaitCmdList().size()-1);
   }
-  private void accept() {
+  public void accept() {
     ObjectOutputStream objectOutputStream = player.getObjectOutputStream();
     try {
       switch (commandType) {
         case CHANGE_NAME:
           String newUsername;
           newUsername = (String) objectList.get(0);
+          if(Server.getPlayerByName(newUsername) != null){
+            Chat.msg(player, "User with name " + newUsername + " already exist");
+            deny();
+            break;
+          }
           if (player.getName() == null) {
             Chat.msgAll(CLog.ConsoleColors.GREEN + " + " + newUsername + " " + CLog.ConsoleColors.RESET);
           } else {
@@ -86,14 +91,14 @@ public class Command {
         case MOVE:
           Geometry.HEXA_MOVE move = (Geometry.HEXA_MOVE) objectList.get(0);
           player.getPosition().add(move);
-
           player.addChange(Change.CHANGE.POSITION);
           break;
       }
     //SEND ACCEPT ????
     } catch (IOException e) {
-
-      throw new RuntimeException(e);
+      log.error( commandType + " accept IOException " + e.getMessage());
+    }finally {
+      player.getWaitCmdList().remove( player.getWaitCmdList().size()-1);
     }
   }
 
@@ -122,5 +127,9 @@ public class Command {
 
   public void addToWaitList() {
     player.getWaitCmdList().add(this);
+  }
+  @Override
+  public String toString(){
+    return commandType.name();
   }
 }
