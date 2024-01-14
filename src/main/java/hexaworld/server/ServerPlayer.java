@@ -88,7 +88,7 @@ public class ServerPlayer implements TCPReceiver {
         break;
       }catch (IOException | ClassNotFoundException e) {
         log.info("Connection error " + e.getMessage());
-        e.printStackTrace();
+        //e.printStackTrace();
         kick();
         break;
       }
@@ -96,7 +96,7 @@ public class ServerPlayer implements TCPReceiver {
   }
 
   public void tick(){
-      if(tickBlocker != 0) {tickBlocker--;}
+      if(tickBlocker > 0) {tickBlocker--;}
       while (tickBlocker == 0 && !waitCmdList.isEmpty()){
         waitCmdList.get(waitCmdList.size()-1).run();
         waitCmdList.remove(waitCmdList.size()-1);
@@ -105,8 +105,8 @@ public class ServerPlayer implements TCPReceiver {
 
   public void sendTick(){
     try {
-      /*objectOutputStream.writeObject(Packet.PacketType.TICK);
-
+      objectOutputStream.writeObject(Packet.PacketType.TICK);
+/*
       //TODO zpracovat changeSet
       if (changeSet.contains(Change.CHANGE.POSITION)){
         objectOutputStream.writeObject(Change.CHANGE.POSITION);
@@ -115,8 +115,8 @@ public class ServerPlayer implements TCPReceiver {
       if (changeSet.contains(Change.CHANGE.ENERGY)){
         objectOutputStream.writeObject(Change.CHANGE.ENERGY);
         objectOutputStream.writeInt(energy);
-      }
-      objectOutputStream.writeObject(Change.CHANGE.STOP);*/
+      }*/
+      objectOutputStream.writeObject(Change.CHANGE.STOP);
 
       /*objectOutputStream.writeInt(tickChanges.size());
       for(Change tickChange : tickChanges) {

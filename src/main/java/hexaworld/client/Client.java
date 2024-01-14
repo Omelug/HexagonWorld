@@ -222,29 +222,33 @@ public class Client extends Application implements TCPReceiver {
             try {
                 Packet.PacketType packetType = (Packet.PacketType) objectInputStream.readObject();
 
-                if (packetType == Packet.PacketType.CHAT){
+                switch (packetType){
+                  case CHAT -> {
                     ClientChat.clientChat( (String) objectInputStream.readObject());
-                }else if (packetType == Packet.PacketType.LOGIN){
+                  }
+                  case LOGIN -> {
                     Player.setPosition((Point) objectInputStream.readObject());
                     player.setEnergy(objectInputStream.readInt());
-                }else if (packetType == Packet.PacketType.CHUNK){
+                  }
+                  case CHUNK -> {
                     Chunk newChunk = (Chunk) objectInputStream.readObject();
 
                     boolean chunkExists = false;
                     for (int i = 0; i < chunks.size(); i++) {
-                        Chunk existingChunk = chunks.get(i);
-                        if (Point.same(existingChunk.getPosition(), newChunk.getPosition())) {
-                            chunkExists = true;
-                            chunks.set(i, newChunk);
-                        }
+                      Chunk existingChunk = chunks.get(i);
+                      if (Point.same(existingChunk.getPosition(), newChunk.getPosition())) {
+                        chunkExists = true;
+                        chunks.set(i, newChunk);
+                      }
                     }
                     if (!chunkExists) {
-                        chunks.add(newChunk);
-                        if(mapCanvas != null){
-                            newChunk.draw();
-                        }
+                      chunks.add(newChunk);
+                      if(mapCanvas != null){
+                        newChunk.draw();
+                      }
                     }
-                }else if (packetType == Packet.PacketType.CORRECTION){
+                  }
+                  case CORRECTION -> {
                     ServerAPI.COMMAND command = (ServerAPI.COMMAND) objectInputStream.readObject();
                     if (command == ServerAPI.COMMAND.MOVE) {
 
@@ -257,23 +261,26 @@ public class Client extends Application implements TCPReceiver {
                       ClientChat.clientChat("undo " + move);
 
                       /**Platform.runLater(() -> {
-                        ClientAPI.movePlayerFollow(Geometry.rotate180(move));
-                      });*/
+                       ClientAPI.movePlayerFollow(Geometry.rotate180(move));
+                       });*/
                       //log.debug("" + Player.getPosition());
                     }
-                }else if (packetType == Packet.PacketType.TICK){
-                  Change.CHANGE change = (Change.CHANGE) objectInputStream.readObject();
-                  log.debug("TICK " );
-                  while (change != Change.CHANGE.STOP){
-                    switch (change){
-                      case POSITION -> {
-                        Point pos = (Point) objectInputStream.readObject();
-                        log.debug("TICK position " + pos);
-                      }
-                      case ENERGY -> {
-                        player.setEnergy(objectInputStream.readInt());
-                      }
-                    }
+                  }
+                  case TICK -> {
+                    Change.CHANGE change = (Change.CHANGE) objectInputStream.readObject();
+                    log.debug("TICK " + change);
+                      while (change != Change.CHANGE.STOP){
+                       switch (change){
+                         case POSITION -> {
+                         Point pos = (Point) objectInputStream.readObject();
+                         log.debug("TICK position " + pos);
+                         }
+                         case ENERGY -> {
+                         player.setEnergy(objectInputStream.readInt());
+                         }
+                       }
+                        change = (Change.CHANGE) objectInputStream.readObject();
+                     }
                   }
                 }
             } catch(EOFException e) {
