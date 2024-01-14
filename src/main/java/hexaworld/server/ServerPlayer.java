@@ -4,6 +4,7 @@ import hexaworld.cli.CLog;
 import hexaworld.client.Client;
 import hexaworld.geometry.Chunk;
 import hexaworld.geometry.Point;
+import hexaworld.net.Change;
 import hexaworld.net.Packet;
 import hexaworld.net.TCPReceiver;
 import hexaworld.server.commands.Command;
@@ -12,6 +13,7 @@ import lombok.Setter;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -33,13 +35,16 @@ public class ServerPlayer implements TCPReceiver {
   @Getter @Setter
   private int energy = ServerConfig.getCommandTable().get(CHANGE_NAME).getEnergy()+30;//TODO +30 for testing
   @Getter @Setter
-  private List<Command> waitCmdList;
+  private List<Command> waitCmdList = new ArrayList<>();
+  @Getter @Setter
+  private List<Change> tickChanges = new ArrayList<>();
   @Getter
   private final Socket clientSocket;
   @Getter
   private ObjectOutputStream objectOutputStream;
   @Getter @Setter
   private final Set<Chunk> visibleChunks = new HashSet<>();
+  Set<Change.CHANGE> changeSet = new HashSet<>();
 
   public ServerPlayer(Socket clientSocket){
     this.clientSocket = clientSocket;
@@ -63,56 +68,73 @@ public class ServerPlayer implements TCPReceiver {
 
     while(true){
       try {
-        int packetType = objectInputStream.readInt();
+        Packet.PacketType packetType = (Packet.PacketType) objectInputStream.readObject();
         //log.debug("  "+packetType +".");
-          if (packetType == COMMAND.ordinal()){
-            int command = objectInputStream.readInt();
+          if (packetType == COMMAND){
+            ServerAPI.COMMAND command = (ServerAPI.COMMAND) objectInputStream.readObject();
             //log.debug(command+ ":");
-            Command cmd = new Command(this,ServerAPI.COMMAND.get(command));
+            Command cmd = new Command(this,command);
             cmd.saveInput(objectInputStream);
-            if (tickBlocker == 0){
-              cmd.run();
-            }else{
-              //cmd.saveInput(objectInputStream);
-              //cmd.addToWaitList();
-              //TODO send WAIT
-              log.debug("Waiting is not implemented yet, tickBlocker:" + tickBlocker);
-            }
-          }else if (packetType == Packet.PacketType.LOGIN.ordinal()) {
+            cmd.addToWaitList();
+          }else if (packetType == Packet.PacketType.LOGIN) {
             login();
-          } else if (packetType == Packet.PacketType.CHAT.ordinal()) {
+          } else if (packetType == Packet.PacketType.CHAT) {
             Chat.msgAll("[" + name + "]" + objectInputStream.readObject());
           }
       } catch(EOFException e) {
-        log.info( "EOFException" + tcpClientSocket.isConnected());
+        log.info( "EOFException " + tcpClientSocket.isConnected());
         //e.printStackTrace();
         kick();
         break;
       }catch (IOException | ClassNotFoundException e) {
         log.info("Connection error " + e.getMessage());
+        e.printStackTrace();
         kick();
         break;
       }
     }
   }
 
-  /*private void tick(){
+  public void tick(){
+      if(tickBlocker != 0) {tickBlocker--;}
+      while (tickBlocker == 0 && !waitCmdList.isEmpty()){
+        waitCmdList.get(waitCmdList.size()-1).run();
+        waitCmdList.remove(waitCmdList.size()-1);
+      }
+  }
+
+  public void sendTick(){
     try {
-      objectOutputStream.writeInt(Packet.PacketType.TICK.ordinal());
-      objectOutputStream.writeInt(energy);
-      objectOutputStream.writeInt(tickChanges.size());
+      /*objectOutputStream.writeObject(Packet.PacketType.TICK);
+
+      //TODO zpracovat changeSet
+      if (changeSet.contains(Change.CHANGE.POSITION)){
+        objectOutputStream.writeObject(Change.CHANGE.POSITION);
+        objectOutputStream.writeObject(position);
+      }
+      if (changeSet.contains(Change.CHANGE.ENERGY)){
+        objectOutputStream.writeObject(Change.CHANGE.ENERGY);
+        objectOutputStream.writeInt(energy);
+      }
+      objectOutputStream.writeObject(Change.CHANGE.STOP);*/
+
+      /*objectOutputStream.writeInt(tickChanges.size());
       for(Change tickChange : tickChanges) {
         objectOutputStream.writeObject(tickChange);
-      }
+      }*/
+
       objectOutputStream.flush();
     } catch (IOException e) {
       log.error("TICK error");
     }
-  }*/
+    //reset useless data
+    changeSet.clear();
+    tickChanges.clear();
+  }
 
   private void login() {
     try {
-      objectOutputStream.writeInt(Packet.PacketType.LOGIN.ordinal());
+      objectOutputStream.writeObject(Packet.PacketType.LOGIN);
       objectOutputStream.writeObject(position);
       objectOutputStream.writeInt(energy);
       objectOutputStream.flush();
@@ -131,9 +153,14 @@ public class ServerPlayer implements TCPReceiver {
     Server.getPlayers().remove(this);
   }
 
-  private class Change{
-    public Change(){
+  @Override
+  public String toString(){
+    return name +" ["+ clientSocket.getInetAddress() + ":" + clientSocket.getPort()+"]";
+  }
 
+  public void addChange(Change.CHANGE change) {
+    if(!change.isHasData()) {
+      changeSet.add(change);
     }
   }
 }

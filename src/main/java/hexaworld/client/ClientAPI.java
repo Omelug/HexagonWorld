@@ -38,8 +38,8 @@ public class ClientAPI {
 
   public static void changeName(String username) {
     try{
-      objectOutputStream.writeInt(Packet.PacketType.COMMAND.ordinal());
-      objectOutputStream.writeInt(ServerAPI.COMMAND.CHANGE_NAME.ordinal());
+      objectOutputStream.writeObject(Packet.PacketType.COMMAND);
+      objectOutputStream.writeObject(ServerAPI.COMMAND.CHANGE_NAME);
       objectOutputStream.writeObject(username);
 
       objectOutputStream.flush();
@@ -64,8 +64,8 @@ public class ClientAPI {
 
   public static void loadChunk(Point centerOfChunk) { //center point
     try{
-      objectOutputStream.writeInt(Packet.PacketType.COMMAND.ordinal());
-      objectOutputStream.writeInt(ServerAPI.COMMAND.LOAD_CHUNK.ordinal());
+      objectOutputStream.writeObject(Packet.PacketType.COMMAND);
+      objectOutputStream.writeObject(ServerAPI.COMMAND.LOAD_CHUNK);
       objectOutputStream.writeObject(centerOfChunk);
       objectOutputStream.flush();
     } catch (IOException e) {
@@ -75,7 +75,7 @@ public class ClientAPI {
 
   public static void login() {
     try {
-      objectOutputStream.writeInt(Packet.PacketType.LOGIN.ordinal());
+      objectOutputStream.writeObject(Packet.PacketType.LOGIN);
     } catch (IOException e) {
       Client.log.error("Error TCP connection " + e.getMessage());
     }
@@ -119,7 +119,7 @@ public class ClientAPI {
 
   public static void chat(String substring) {
     try{
-      objectOutputStream.writeInt(Packet.PacketType.CHAT.ordinal());
+      objectOutputStream.writeObject(Packet.PacketType.CHAT);
       objectOutputStream.writeObject(substring);
       objectOutputStream.flush();
     } catch (IOException e) {
@@ -129,8 +129,8 @@ public class ClientAPI {
 
   public static void move(Geometry.HEXA_MOVE move) {
     try{
-      objectOutputStream.writeInt(Packet.PacketType.COMMAND.ordinal());
-      objectOutputStream.writeInt(ServerAPI.COMMAND.MOVE.ordinal());
+      objectOutputStream.writeObject(Packet.PacketType.COMMAND);
+      objectOutputStream.writeObject(ServerAPI.COMMAND.MOVE);
       objectOutputStream.writeObject(move);
       objectOutputStream.flush();
     } catch (IOException e) {

@@ -1,14 +1,13 @@
 package hexaworld.server;
 
 import hexaworld.cli.CLog;
+import hexaworld.client.Player;
+import hexaworld.geometry.Chunk;
 import lombok.Getter;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
-import java.util.StringJoiner;
+import java.util.*;
 
 public class Server implements Runnable{
   static private final CLog log = new CLog(CLog.ConsoleColors.PURPLE);
@@ -109,11 +108,50 @@ public class Server implements Runnable{
   private void printPlayerList() {
     log.info("Player list:");
     for (ServerPlayer player : players){
-      log.info(player.getName() + "(" +player.getEnergy()+ ") pos:" + player.getPosition());
+      log.info(player + "(" +player.getEnergy()+ ") pos:" + player.getPosition());
     }
   }
 
   private void startTick() {
+    final int targetTPS = 20;
+    final long targetSleepTime = 1000 / targetTPS;
+
+    Thread tickingThread = new Thread(() -> {
+
+      while (true) {
+        long startTime = System.currentTimeMillis();
+
+        Iterator<ServerPlayer> iterator = players.iterator();
+
+        while (iterator.hasNext()) {
+          ServerPlayer player = iterator.next();
+          synchronized(player) {
+            // Perform operations on player
+            player.tick();
+            //Chat.msg(player, "TICK");
+          }
+        }
+        Iterator<ServerPlayer> sendIter = players.iterator();
+
+        while (sendIter.hasNext()) {
+          ServerPlayer player = sendIter.next();
+          synchronized(player) {
+            player.sendTick();
+          }
+        }
+
+        long elapsedTime = System.currentTimeMillis() - startTime;
+
+        long sleepTime = Math.max(0, targetSleepTime - elapsedTime);
+
+        try {
+          Thread.sleep(sleepTime);
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
+    });
+    tickingThread.start();
   }
 
 }

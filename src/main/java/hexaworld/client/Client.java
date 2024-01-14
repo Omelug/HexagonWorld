@@ -5,9 +5,11 @@ import hexaworld.cli.CliCommand;
 import hexaworld.geometry.Chunk;
 import hexaworld.geometry.Geometry;
 import hexaworld.geometry.Point;
+import hexaworld.net.Change;
 import hexaworld.net.Packet;
 import hexaworld.net.TCPReceiver;
 import hexaworld.server.ServerAPI;
+import hexaworld.server.commands.Command;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -218,14 +220,14 @@ public class Client extends Application implements TCPReceiver {
 
         while(true){
             try {
-                int packetType = objectInputStream.readInt();
+                Packet.PacketType packetType = (Packet.PacketType) objectInputStream.readObject();
 
-                if (packetType == Packet.PacketType.CHAT.ordinal()){
+                if (packetType == Packet.PacketType.CHAT){
                     ClientChat.clientChat( (String) objectInputStream.readObject());
-                }else if (packetType == Packet.PacketType.LOGIN.ordinal()){
+                }else if (packetType == Packet.PacketType.LOGIN){
                     Player.setPosition((Point) objectInputStream.readObject());
                     player.setEnergy(objectInputStream.readInt());
-                }else if (packetType == Packet.PacketType.CHUNK.ordinal()){
+                }else if (packetType == Packet.PacketType.CHUNK){
                     Chunk newChunk = (Chunk) objectInputStream.readObject();
 
                     boolean chunkExists = false;
@@ -242,9 +244,9 @@ public class Client extends Application implements TCPReceiver {
                             newChunk.draw();
                         }
                     }
-                }else if (packetType == Packet.PacketType.CORRECTION.ordinal()){
-                    int command = objectInputStream.readInt();
-                    if (command == ServerAPI.COMMAND.MOVE.ordinal()) {
+                }else if (packetType == Packet.PacketType.CORRECTION){
+                    ServerAPI.COMMAND command = (ServerAPI.COMMAND) objectInputStream.readObject();
+                    if (command == ServerAPI.COMMAND.MOVE) {
 
                       Geometry.HEXA_MOVE move = (Geometry.HEXA_MOVE) objectInputStream.readObject(); //move what was not accepted by server
 
@@ -253,11 +255,26 @@ public class Client extends Application implements TCPReceiver {
                       Point newPos = new Point(newPosX,newPosY);*/
 
                       ClientChat.clientChat("undo " + move);
-                      Platform.runLater(() -> {
+
+                      /**Platform.runLater(() -> {
                         ClientAPI.movePlayerFollow(Geometry.rotate180(move));
-                      });
+                      });*/
                       //log.debug("" + Player.getPosition());
                     }
+                }else if (packetType == Packet.PacketType.TICK){
+                  Change.CHANGE change = (Change.CHANGE) objectInputStream.readObject();
+                  log.debug("TICK " );
+                  while (change != Change.CHANGE.STOP){
+                    switch (change){
+                      case POSITION -> {
+                        Point pos = (Point) objectInputStream.readObject();
+                        log.debug("TICK position " + pos);
+                      }
+                      case ENERGY -> {
+                        player.setEnergy(objectInputStream.readInt());
+                      }
+                    }
+                  }
                 }
             } catch(EOFException e) {
                 continue;

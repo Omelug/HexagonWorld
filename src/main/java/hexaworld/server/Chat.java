@@ -14,7 +14,7 @@ public class Chat {
   }
   public static void msg(ServerPlayer player, String msg){
     try {
-      player.getObjectOutputStream().writeInt(Packet.PacketType.CHAT.ordinal());
+      player.getObjectOutputStream().writeObject(Packet.PacketType.CHAT);
       player.getObjectOutputStream().writeObject(msg);
       player.getObjectOutputStream().flush();
     } catch (IOException e) {

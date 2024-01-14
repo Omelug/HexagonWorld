@@ -4,7 +4,10 @@ import hexaworld.cli.CLog;
 import hexaworld.geometry.Chunk;
 import hexaworld.geometry.Geometry;
 import hexaworld.geometry.Point;
+import hexaworld.net.Change;
 import hexaworld.server.*;
+import lombok.Getter;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -19,7 +22,8 @@ public class Command {
   private static final CLog log = new CLog(CLog.ConsoleColors.WHITE);
 
   private final ServerAPI.COMMAND commandType;
-  private ServerPlayer player;
+  @Getter
+  private final ServerPlayer player;
 
   public Command(ServerPlayer player, ServerAPI.COMMAND commandType) {
     this.player = player;
@@ -30,23 +34,20 @@ public class Command {
     int need = ServerConfig.getCommandTable().get(commandType).getEnergy();
       if (need <= player.getEnergy()){
         player.setEnergy(player.getEnergy()-need);
+        player.addChange(Change.CHANGE.ENERGY);
         return true;
       }
       Chat.msg(player,  CLog.ConsoleColors.RED+ "Not enough energy need " + need+". You have " + player.getEnergy() +"."+ CLog.ConsoleColors.RESET);
       return false;
   }
 
-  public void addToWaitList() {
-    player.getWaitCmdList().add(this);
-  }
-
-  public void deny() {
+  private void deny() {
     try {
       ObjectOutputStream objectOutputStream = player.getObjectOutputStream();
-      objectOutputStream.writeInt(CORRECTION.ordinal());
+      objectOutputStream.writeObject(CORRECTION);
       switch (commandType){
         case MOVE:
-          objectOutputStream.writeInt(MOVE.ordinal());
+          objectOutputStream.writeObject(MOVE);
           Geometry.HEXA_MOVE correction = (Geometry.HEXA_MOVE) objectList.get(0);
 
           objectOutputStream.writeObject(correction);
@@ -60,7 +61,7 @@ public class Command {
     }
 
   }
-  public void accept() {
+  private void accept() {
     ObjectOutputStream objectOutputStream = player.getObjectOutputStream();
     try {
       switch (commandType) {
@@ -78,16 +79,18 @@ public class Command {
           Chunk chunk = Map.loadChunk((Point) objectList.get(0));
           player.getVisibleChunks().add(chunk);
 
-          objectOutputStream.writeInt(CHUNK.ordinal());
+          objectOutputStream.writeObject(CHUNK);
           objectOutputStream.writeObject(chunk);
           objectOutputStream.flush();
           break;
         case MOVE:
           Geometry.HEXA_MOVE move = (Geometry.HEXA_MOVE) objectList.get(0);
           player.getPosition().add(move);
+
+          player.addChange(Change.CHANGE.POSITION);
           break;
       }
-    //SEND ACCEPT
+    //SEND ACCEPT ????
     } catch (IOException e) {
 
       throw new RuntimeException(e);
@@ -97,9 +100,11 @@ public class Command {
   public void run() {
     boolean freeChunks = (commandType == ServerAPI.COMMAND.LOAD_CHUNK) && player.getVisibleChunks().size() < ServerConfig.FREE_CHUNK;
     if (freeChunks || payForCmd()){
-      //TODO no time consumig yet       player.setTickBlocker(player.getTickBlocker() + ServerConfig.getCommandTable().get(commandType).getTime());
+      log.debug("accept " + commandType);
+      player.setTickBlocker(player.getTickBlocker() + ServerConfig.getCommandTable().get(commandType).getTime());
       accept();
     }else{
+      log.debug("deny " + commandType);
       deny();
     };
   }
@@ -113,5 +118,9 @@ public class Command {
     } catch (IOException | ClassNotFoundException e) {
         throw new RuntimeException(e);
     }
+  }
+
+  public void addToWaitList() {
+    player.getWaitCmdList().add(this);
   }
 }

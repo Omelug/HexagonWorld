@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 @Getter
 public class Point implements Serializable {
-  public static Point minus(Point A, Point B) {
+  public static Point minusPoint(Point A, Point B) {
     return new Point(A.x - B.x, A.y - B.y);
   }
   public static Point plus(Point A, Point B) {
