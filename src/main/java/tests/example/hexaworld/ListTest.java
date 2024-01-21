@@ -10,6 +10,6 @@ public class ListTest {
     intList.add(2);
     intList.add(3);
 
-    System.out.println("" + intList.get(0));
+    System.out.println("" + intList.get(1));
   }
 }

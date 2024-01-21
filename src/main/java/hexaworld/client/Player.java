@@ -52,8 +52,13 @@ public class Player{
       Client.getShift().add(new Point(move180.getX()*Client.getVIEW_UNIT().getX(),move180.getY()*Client.getVIEW_UNIT().getY()));
       position.add(move);
       ClientAPI.canvasUpdate();
-    }else{
-      position.add(move);
+    }
+  }
+  public static void moveFollow(double moveX, double moveY) {
+    if(Client.getViewType() == Client.ViewType.FOLLOW){
+      Client.getShift().add(new Point(-moveX*Client.getVIEW_UNIT().getX(),-moveY*Client.getVIEW_UNIT().getY()));
+      position.add(moveX, moveY);
+      ClientAPI.canvasUpdate();
     }
   }
 
@@ -61,22 +66,29 @@ public class Player{
     position.add(deltaX,deltaY);
   }
 
+  // Variables to control the rate
+  private static final long MOVE_INTERVAL = 100; // Interval in milliseconds
+  private long lastMoveTime = 0;
   public void handleKeyPress(KeyCode code) {
     //TODO sent to server and check correction if is not possible
 
     Geometry.HEXA_MOVE move = keyBindMove.get(code);
-
-    if(null != move){
-      ClientAPI.move(move); //send move to server
-      ClientAPI.movePlayerFollow(move);
+    if (move == null){
       return;
     }
 
-    Point deltaShift = keyBindShift.get(code);
+    long currentTime = System.currentTimeMillis();
+
+    if (currentTime - lastMoveTime >= MOVE_INTERVAL) {
+      ClientAPI.move(move); //send move to server
+      lastMoveTime = currentTime;
+    }
+
+   /* Point deltaShift = keyBindShift.get(code);
     if(null != deltaShift){
       Client.getShift().add(deltaShift);
       ClientAPI.canvasUpdate();
-    }
+    }*/
 
   }
 

@@ -261,33 +261,39 @@ public class Client extends Application implements TCPReceiver {
 
                       ClientChat.clientChat("undo " + move);
 
-                      /**Platform.runLater(() -> {
+                      /*Platform.runLater(() -> {
                        ClientAPI.movePlayerFollow(Geometry.rotate180(move));
-                       });*/
+                      });*/
                       //log.debug("" + Player.getPosition());
                     }
                   }
                   case TICK -> {
                     Change.CHANGE change = (Change.CHANGE) objectInputStream.readObject();
-                    log.debug("TICK " + change);
+                    //log.debug("TICK " + change);
                       while (change != Change.CHANGE.STOP){
+                        //log.debug("TICK");
                        switch (change){
                          case POSITION -> {
-                         Point pos = (Point) objectInputStream.readObject();
-                         log.debug("TICK position " + pos);
+                           double posX =  objectInputStream.readDouble();
+                           double posY =  objectInputStream.readDouble();
+                           //log.debug("TICK position [" + posX +";"+ posY+"]");
+                           Player.moveFollow(posX- Player.getPosition().getX(),posY- Player.getPosition().getY());
+                           //lientAPI.moveTo(posX, posY);
                          }
                          case ENERGY -> {
-                         player.setEnergy(objectInputStream.readInt());
+                          player.setEnergy(objectInputStream.readInt());
                          }
                        }
-                        change = (Change.CHANGE) objectInputStream.readObject();
+                       change = (Change.CHANGE) objectInputStream.readObject();
                      }
                   }
                 }
             } catch(EOFException e) {
-                continue;
+              //e.printStackTrace();
+              continue;
             }catch (IOException | ClassNotFoundException e) {
                 log.terror("Connection lost");
+                e.printStackTrace();
                 break;
             }
         }

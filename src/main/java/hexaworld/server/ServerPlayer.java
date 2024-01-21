@@ -37,8 +37,6 @@ public class ServerPlayer implements TCPReceiver {
   private int energy = ServerConfig.getCommandTable().get(CHANGE_NAME).getEnergy()+30;//TODO +30 for testing
   @Getter @Setter
   private List<Command> waitCmdList = new ArrayList<>();
-  @Getter @Setter
-  private List<Change> tickChanges = new ArrayList<>();
   @Getter
   private final Socket clientSocket;
   @Getter
@@ -80,7 +78,7 @@ public class ServerPlayer implements TCPReceiver {
               cmd.addToWaitList();
             }else{
               log.debug("Limit of commands " + PLAYER_WAIT_LIST_SIZE +" reached ");
-              cmd.deny();
+              cmd.deny(false);
             }
           }else if (packetType == Packet.PacketType.LOGIN) {
             login();
@@ -94,7 +92,7 @@ public class ServerPlayer implements TCPReceiver {
         break;
       }catch (IOException | ClassNotFoundException e) {
         log.info("Connection error " + e.getMessage());
-        //e.printStackTrace();
+        e.printStackTrace();
         kick();
         break;
       }
@@ -104,30 +102,32 @@ public class ServerPlayer implements TCPReceiver {
   public void tick(){
       if(tickBlocker > 0) {tickBlocker--;}
       while (tickBlocker == 0 && !waitCmdList.isEmpty()){
-        waitCmdList.get(waitCmdList.size()-1).run();
-        waitCmdList.remove(waitCmdList.size()-1);
+        waitCmdList.get(0).run();
       }
   }
 
   public void sendTick(){
     try {
+      if (objectOutputStream == null){
+        log.debug( name +"'s output is out");
+        return;
+      }
       objectOutputStream.writeObject(Packet.PacketType.TICK);
-/*
+
       //TODO zpracovat changeSet
       if (changeSet.contains(Change.CHANGE.POSITION)){
+
+        //log.debug(changeSet.toString());
         objectOutputStream.writeObject(Change.CHANGE.POSITION);
-        objectOutputStream.writeObject(position);
+        objectOutputStream.writeDouble( position.getX());
+        objectOutputStream.writeDouble( position.getY());
       }
-      if (changeSet.contains(Change.CHANGE.ENERGY)){
+
+      /*if (changeSet.contains(Change.CHANGE.ENERGY)){
         objectOutputStream.writeObject(Change.CHANGE.ENERGY);
         objectOutputStream.writeInt(energy);
       }*/
       objectOutputStream.writeObject(Change.CHANGE.STOP);
-
-      /*objectOutputStream.writeInt(tickChanges.size());
-      for(Change tickChange : tickChanges) {
-        objectOutputStream.writeObject(tickChange);
-      }*/
 
       objectOutputStream.flush();
     } catch (IOException e) {
@@ -135,7 +135,6 @@ public class ServerPlayer implements TCPReceiver {
     }
     //reset useless data
     changeSet.clear();
-    tickChanges.clear();
   }
 
   private void login() {
@@ -168,5 +167,9 @@ public class ServerPlayer implements TCPReceiver {
     if(!change.isHasData()) {
       changeSet.add(change);
     }
+  }
+
+  public void addEnergy(int i) {
+    energy += i;
   }
 }

@@ -5,6 +5,7 @@ import hexaworld.geometry.Geometry;
 import hexaworld.geometry.Point;
 import hexaworld.net.Packet;
 import hexaworld.server.ServerAPI;
+import javafx.application.Platform;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
@@ -14,6 +15,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
+import static hexaworld.client.Player.moveFollow;
 import static hexaworld.geometry.Geometry.posInChunk;
 
 public class ClientAPI {
@@ -83,7 +85,6 @@ public class ClientAPI {
 
   public static void mapCanvasUpdate() {
     Client.getRoot().getChildren().remove(Client.getMapCanvas());
-
     Client.setMapCanvas(new Canvas(Client.getRoot().getWidth(),Client.getRoot().getHeight()));
     GraphicsContext gc = Client.getMapCanvas().getGraphicsContext2D();
     gc.setFill(Color.rgb(200, 15, 230, 0.5));
@@ -98,8 +99,6 @@ public class ClientAPI {
     }
 
     Chunk.drawTriangles(gc);
-
-
     Client.getRoot().getChildren().add(Client.getMapCanvas());
   }
 
@@ -113,8 +112,10 @@ public class ClientAPI {
     Client.getRoot().getChildren().add(Client.getPlayerCanvas());
   }
   public static void canvasUpdate() {
-    mapCanvasUpdate();
-    playerCanvasUpdate();
+    Platform.runLater(() -> { //TODO tohle n2jak vylads
+      mapCanvasUpdate();
+      playerCanvasUpdate();
+    });
   }
 
   public static void chat(String substring) {
@@ -138,7 +139,12 @@ public class ClientAPI {
     }
   }
 
-  public static void movePlayerFollow(Geometry.HEXA_MOVE move) {
-    Player.moveFollow(move);
+  public static void moveTo(double newX, double newY) {
+    //Point deltaShift = new Point(newX - Player.getPosition().getX(), newY - Player.getPosition().getY());
+    //ClientAPI.chat(" deltaShift " + deltaShift);
+    //Player.moveFollow(deltaShift);
+    //Client.getShift().add(deltaShift);
+    //ClientAPI.canvasUpdate();
+    moveFollow(Geometry.HEXA_MOVE.DOWN);
   }
 }

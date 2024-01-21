@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static hexaworld.net.Packet.PacketType.CHUNK;
@@ -41,7 +42,7 @@ public class Command {
       return false;
   }
 
-  public void deny() {
+  public void deny(boolean inWaitingList) {
     try {
       ObjectOutputStream objectOutputStream = player.getObjectOutputStream();
       switch (commandType){
@@ -59,7 +60,9 @@ public class Command {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-    player.getWaitCmdList().remove( player.getWaitCmdList().size()-1);
+    if(inWaitingList){
+      player.getWaitCmdList().remove(0);
+    }
   }
   public void accept() {
     ObjectOutputStream objectOutputStream = player.getObjectOutputStream();
@@ -84,6 +87,8 @@ public class Command {
           Chunk chunk = Map.loadChunk((Point) objectList.get(0));
           player.getVisibleChunks().add(chunk);
 
+          log.debug(Arrays.toString(chunk.getData()));
+
           objectOutputStream.writeObject(CHUNK);
           objectOutputStream.writeObject(chunk);
           objectOutputStream.flush();
@@ -99,7 +104,7 @@ public class Command {
       log.error( commandType + " accept IOException " + e.getMessage());
     }finally {
       if(!player.getWaitCmdList().isEmpty()){ //FIXME, jakto6e tu muze byt waitList prazdny
-        player.getWaitCmdList().remove( player.getWaitCmdList().size()-1);
+        player.getWaitCmdList().remove(0);
       }
     }
   }
@@ -107,12 +112,12 @@ public class Command {
   public void run() {
     boolean freeChunks = (commandType == ServerAPI.COMMAND.LOAD_CHUNK) && player.getVisibleChunks().size() < ServerConfig.FREE_CHUNK;
     if (freeChunks || payForCmd()){
-      log.debug("accept " + commandType);
+      //log.debug("accept " + commandType);
       player.setTickBlocker(player.getTickBlocker() + ServerConfig.getCommandTable().get(commandType).getTime());
       accept();
     }else{
-      log.debug("deny " + commandType);
-      deny();
+      //log.debug("deny " + commandType);
+      deny(true);
     };
   }
   private List<Object> objectList = new ArrayList<>();

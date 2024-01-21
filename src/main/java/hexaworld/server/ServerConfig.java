@@ -25,7 +25,7 @@ public class ServerConfig {
           FREE_CHUNK = 19,
           PLAYER_WAIT_LIST_SIZE = 10,
           TCP_PORT = 42,
-          TPS = 10;
+          TPS = 20;
   public static final double MAP_SEED = 42;
 
   public static void loadEnergyTable(){ //FIXME load from json

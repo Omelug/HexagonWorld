@@ -13,6 +13,7 @@ import java.util.*;
 public class Chunk implements Serializable {
   @Getter
   private final Point position;
+  @Getter
   private BlockType[] data;
   public static final short CHUNK_SIZE = 2;
 
@@ -36,22 +37,30 @@ public class Chunk implements Serializable {
     Random random = new Random((long) (ServerConfig.MAP_SEED + position.getY() + position.getX()));
 
     BlockType[] values = BlockType.values();
+
     for (int i = 0; i < newData.length; i++) {
-      newData[i] = values[random.nextInt(values.length)];
+
+      int randValue = random.nextInt(100);
+      System.out.println("" + randValue);
+
+      if (randValue <70) {
+        newData[i] = values[0]; // 70% for values[0]
+      } else if (randValue < 90) {
+        newData[i] = values[1]; // 20% for values[1]
+      } else {
+        newData[i] = values[2]; // 10% for values[2]
+      }
     }
+
+    /**for (int i = 0; i < newData.length; i++) {
+      newData[i] = values[random.nextInt(values.length)];
+    }*/
     return new Chunk(position, newData);
   }
 
   public void draw() {
-    /*hexagonPath = Geometry.createHexagonPath(position.getX(), position.getY(), CHUNK_SIZE);
-    hexagonPath.setFill(Color.GREEN);
-
-    if (!Client.getRoot().getChildren().contains(hexagonPath)) {
-      Client.getRoot().getChildren().add(hexagonPath);
-    }*/
     GraphicsContext gc = Client.getMapCanvas().getGraphicsContext2D();
     Geometry.drawHexagon(gc,position.getX(), position.getY(), CHUNK_SIZE);
-    //Chunk.drawTriangles(gc, chunk);
   }
 
   public static void drawTriangles(GraphicsContext gc) {
