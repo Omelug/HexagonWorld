@@ -73,22 +73,19 @@ public class Player{
     //TODO sent to server and check correction if is not possible
 
     Geometry.HEXA_MOVE move = keyBindMove.get(code);
-    if (move == null){
-      return;
+    if (move != null){
+      long currentTime = System.currentTimeMillis();
+
+      if (currentTime - lastMoveTime >= MOVE_INTERVAL) {
+        ClientAPI.move(move); //send move to server
+        lastMoveTime = currentTime;
+      }
     }
-
-    long currentTime = System.currentTimeMillis();
-
-    if (currentTime - lastMoveTime >= MOVE_INTERVAL) {
-      ClientAPI.move(move); //send move to server
-      lastMoveTime = currentTime;
+    Point deltaShift = keyBindShift.get(code);
+    if (deltaShift != null){
+        Client.getShift().add(deltaShift);
+        ClientAPI.canvasUpdate();
     }
-
-   /* Point deltaShift = keyBindShift.get(code);
-    if(null != deltaShift){
-      Client.getShift().add(deltaShift);
-      ClientAPI.canvasUpdate();
-    }*/
 
   }
 

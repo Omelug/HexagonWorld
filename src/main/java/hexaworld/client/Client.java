@@ -222,12 +222,15 @@ public class Client extends Application implements TCPReceiver {
             try {
                 Packet.PacketType packetType = (Packet.PacketType) objectInputStream.readObject();
 
+              log.debug("  "+packetType +".");
+
                 switch (packetType){
                   case CHAT -> {
                     ClientChat.clientChat( (String) objectInputStream.readObject());
                   }
                   case LOGIN -> {
-                    Player.setPosition((Point) objectInputStream.readObject());
+
+                    Player.setPosition(new Point(objectInputStream.readDouble(),objectInputStream.readDouble()));
                     player.setEnergy(objectInputStream.readInt());
                   }
                   case CHUNK -> {

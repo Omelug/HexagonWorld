@@ -68,7 +68,7 @@ public class ServerPlayer implements TCPReceiver {
     while(true){
       try {
         Packet.PacketType packetType = (Packet.PacketType) objectInputStream.readObject();
-        //log.debug("  "+packetType +".");
+        log.debug("  "+packetType +".");
           if (packetType == COMMAND){
             ServerAPI.COMMAND command = (ServerAPI.COMMAND) objectInputStream.readObject();
             //log.debug(command+ ":");
@@ -140,7 +140,8 @@ public class ServerPlayer implements TCPReceiver {
   private void login() {
     try {
       objectOutputStream.writeObject(Packet.PacketType.LOGIN);
-      objectOutputStream.writeObject(position);
+      objectOutputStream.writeDouble(position.getX());
+      objectOutputStream.writeDouble(position.getY());
       objectOutputStream.writeInt(energy);
       objectOutputStream.flush();
     } catch (IOException e) {
